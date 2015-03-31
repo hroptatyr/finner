@@ -1,0 +1,7 @@
+Usage: finner COMMAND [FILE]...
+
+
+Usage: finner anno [FILE]...
+
+Annotate contents of FILE with recognised entities.
+If FILE is omitted stdin will be used.

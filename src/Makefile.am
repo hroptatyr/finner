@@ -20,6 +20,10 @@ SUFFIXES =
 CLEANFILES += version.c
 EXTRA_DIST += version.c.in
 
+bin_PROGRAMS += finner
+finner_SOURCES = finner.c finner.yuck
+BUILT_SOURCES += finner.yucc
+
 
 ## version rules
 version.c: version.c.in $(top_builddir)/.version
