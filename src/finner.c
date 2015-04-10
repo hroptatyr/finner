@@ -40,6 +40,7 @@
 #if defined HAVE_VERSION_H
 # include "version.h"
 #endif	/* HAVE_VERSION_H */
+#include "coru.h"
 
 
 #include "finner.yucc"
@@ -54,6 +55,9 @@ main(int argc, char *argv[])
 		rc = 1;
 		goto out;
 	}
+
+	/* get the coroutines going */
+	initialise_cocore();
 
 out:
 	yuck_free(argi);
