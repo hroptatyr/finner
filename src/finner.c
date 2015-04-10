@@ -51,6 +51,11 @@
 #include "coru.h"
 #include "nifty.h"
 
+struct anno_s {
+	size_t sta;
+	size_t end;
+};
+
 
 static void
 __attribute__((format(printf, 1, 2)))
@@ -112,27 +117,22 @@ DEFCORU(co_snarf, {int fd;}, void *UNUSED(arg))
 	return 0;
 }
 
-struct anno_s {
-	size_t sta;
-	size_t end;
-};
-
-struct co_anno_retval_s {
+struct co_terms_retval_s {
 	const char *base;
 	size_t nannos;
+	struct anno_s bbox;
 	struct anno_s annos[];
 };
 
-DEFCORU(co_anno, {}, void *arg)
+DEFCORU(co_terms, {}, void *arg)
 {
 	const struct co_snarf_retval_s *rd = arg;
-	struct co_anno_retval_s *rv;
+	struct co_terms_retval_s *rv;
 	size_t rz;
-	ssize_t npr;
 
 	/* start out with a reasonable number of annos */
 	rv = calloc(4096U, sizeof(*rv));
-	rz = 4095U;
+	rz = 4096U - 1U/*hdr*/ - 1U/*bbox*/;
 
 	/* enter the main snarf loop */
 	do {
@@ -154,7 +154,8 @@ DEFCORU(co_anno, {}, void *arg)
 			CLS_SPACE,
 			CLS_ALNUM,
 		} cl;
-		const char *bp = rv->base = rd->buf;
+		const char *bp = rd->buf;
+		size_t ia = 0U;
 
 		for (const char *ap, *fp, *const ep = rd->buf + rd->bsz;
 		     bp < ep; bp++) {
@@ -220,8 +221,16 @@ DEFCORU(co_anno, {}, void *arg)
 				break;
 
 			yield:
-				fwrite(ap, sizeof(*ap), fp - ap, stdout);
-				fputc('\n', stdout);
+				if (UNLIKELY(ia >= rz)) {
+					size_t nu = (rz + 2U) * 2U;
+
+					rv = realloc(rv, nu * sizeof(*rv));
+					rz = nu - 2U;
+				}
+				rv->annos[ia].sta = ap - rd->buf;
+				rv->annos[ia].end = fp - rd->buf;
+				ia++;
+
 				st = ST_NONE;
 				ap = bp;
 				fp = NULL;
@@ -229,8 +238,12 @@ DEFCORU(co_anno, {}, void *arg)
 			}
 		}
 
-		npr = bp - rv->base;
-	} while ((rd = (const void*)YIELD(npr)));
+		/* set up result */
+		rv->base = rd->buf;
+		rv->nannos = ia;
+		rv->bbox.sta = 0U;
+		rv->bbox.end = bp - rd->buf;
+	} while ((rd = (const void*)YIELD(rv)));
 	return 0;
 }
 
@@ -239,7 +252,7 @@ static int
 annotate1(const char *fn)
 {
 	struct cocore *snarf;
-	struct cocore *anno;
+	struct cocore *terms;
 	struct cocore *self;
 	int rc = 0;
 	int fd;
@@ -253,21 +266,21 @@ annotate1(const char *fn)
 	}
 
 	self = PREP();
-	snarf = START_PACK(
-		co_snarf, .next = self,
-		.clo = {.fd = fd});
-	anno = START_PACK(
-		co_anno, .next = self);
+	snarf = START_PACK(co_snarf, .next = self, .clo = {.fd = fd});
+	terms = START_PACK(co_terms, .next = self);
 
 	/* ping-pong relay between the corus
 	 * technically we could let the corus flip-flop call each other
 	 * but we'd like to filter bad input right away */
-	const struct co_snarf_retval_s *rd;
-	ssize_t npr = 0;
-	do {
-		rd = (const void*)NEXT1(snarf, npr);
-		npr = NEXT1(anno, rd);
-	} while (rd != NULL);
+	const struct co_snarf_retval_s *rd = NULL;
+	const struct co_terms_retval_s *ta = NULL;
+	for (ssize_t npr = 0;; npr = ta->bbox.end) {
+		if ((rd = NEXT1(snarf, npr)) == NULL) {
+			break;
+		} else if ((ta = NEXT1(terms, rd)) == NULL) {
+			break;
+		}
+	}
 
 	/* clean up */
 	close(fd);
