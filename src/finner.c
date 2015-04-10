@@ -40,10 +40,258 @@
 #if defined HAVE_VERSION_H
 # include "version.h"
 #endif	/* HAVE_VERSION_H */
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <assert.h>
 #include "coru.h"
+#include "nifty.h"
+
+
+static void
+__attribute__((format(printf, 1, 2)))
+error(const char *fmt, ...)
+{
+	va_list vap;
+	va_start(vap, fmt);
+	vfprintf(stderr, fmt, vap);
+	va_end(vap);
+	if (errno) {
+		fputc(':', stderr);
+		fputc(' ', stderr);
+		fputs(strerror(errno), stderr);
+	}
+	fputc('\n', stderr);
+	return;
+}
+
+
+struct co_snarf_retval_s {
+	const char *buf;
+	size_t bsz;
+};
+
+DEFCORU(co_snarf, {int fd;}, void *UNUSED(arg))
+{
+	/* upon the first call we expect a completely processed buffer
+	 * just to determine the buffer's size */
+	const int fd = CORU_CLOSUR(fd);
+	static char buf[64U * 1024U];
+	static struct co_snarf_retval_s ret = {buf};
+	ssize_t npr = sizeof(buf);
+	ssize_t nrd;
+
+	/* leave some good advice about our access pattern */
+	posix_fadvise(fd, 0, 0, POSIX_FADV_WILLNEED);
+	posix_fadvise(fd, 0, 0, POSIX_FADV_SEQUENTIAL);
+
+	/* enter the main snarf loop */
+	while ((nrd = read(fd, buf + ret.bsz, sizeof(buf) - ret.bsz)) > 0) {
+		/* we've got NRD more unprocessed bytes */
+		ret.bsz += nrd;
+
+		/* process */
+		npr = YIELD(&ret);
+		/* now it's NPR less unprocessed bytes */
+		ret.bsz -= npr;
+
+		/* check if we need to move buffer contents */
+		if (ret.bsz > 0) {
+			memmove(buf, buf + npr, ret.bsz);
+		}
+	}
+	/* final drain */
+	if (ret.bsz) {
+		/* we don't care how much got processed */
+		YIELD(&ret);
+	}
+	return 0;
+}
+
+struct anno_s {
+	size_t sta;
+	size_t end;
+};
+
+struct co_anno_retval_s {
+	const char *base;
+	size_t nannos;
+	struct anno_s annos[];
+};
+
+DEFCORU(co_anno, {}, void *arg)
+{
+	const struct co_snarf_retval_s *rd = arg;
+	struct co_anno_retval_s *rv;
+	size_t rz;
+	ssize_t npr;
+
+	/* start out with a reasonable number of annos */
+	rv = calloc(4096U, sizeof(*rv));
+	rz = 4095U;
+
+	/* enter the main snarf loop */
+	do {
+		/* this is a simple state machine,
+		 * we start at NONE and wait for an ALNUM,
+		 * in state ALNUM we can either go back to NONE (and yield) if
+		 * neither a punct nor an alnum is read, or we go forward to
+		 * PUNCT in state PUNCT we can either go back to NONE (and
+		 * yield) if neither a punct nor an alnum is read, or we go back
+		 * to ALNUM hand over to our friendly termify routine */
+		enum state_e {
+			ST_NONE,
+			ST_SEEN_ALNUM,
+			ST_SEEN_PUNCT,
+		} st = ST_NONE;
+		enum {
+			CLS_UNK,
+			CLS_PUNCT,
+			CLS_SPACE,
+			CLS_ALNUM,
+		} cl;
+		const char *bp = rv->base = rd->buf;
+
+		for (const char *ap, *fp, *const ep = rd->buf + rd->bsz;
+		     bp < ep; bp++) {
+			if (UNLIKELY(*bp < 0)) {
+				cl = CLS_UNK;
+			} else if (*bp <= 0x20) {
+				cl = CLS_SPACE;
+			} else if (*bp < 0x30) {
+				cl = CLS_PUNCT;
+			} else if (*bp < 0x3a) {
+				cl = CLS_ALNUM;
+			} else if (*bp < 0x40) {
+				cl = CLS_PUNCT;
+			} else if (*bp < 0x5b) {
+				cl = CLS_ALNUM;
+			} else if (*bp < 0x61) {
+				cl = CLS_PUNCT;
+			} else if (*bp < 0x7b) {
+				cl = CLS_ALNUM;
+			} else {
+				cl = CLS_PUNCT;
+			}
+
+			switch (st) {
+			case ST_NONE:
+				switch (cl) {
+				case CLS_ALNUM:
+				case CLS_UNK:
+					/* start the machine */
+					st = ST_SEEN_ALNUM;
+				default:
+					ap = bp;
+				}
+				break;
+
+			case ST_SEEN_ALNUM:
+				switch (cl) {
+				case CLS_PUNCT:
+					/* better record the preliminary
+					 * end-of-streak */
+					st = ST_SEEN_PUNCT;
+					fp = bp;
+				default:
+					break;
+				case CLS_SPACE:
+					fp = bp;
+					goto yield;
+				}
+				break;
+
+			case ST_SEEN_PUNCT:
+				switch (cl) {
+				default:
+					/* aah, good one */
+					st = ST_SEEN_ALNUM;
+				case CLS_PUNCT:
+					/* 2 puncts in a row,
+					 * not on my account */
+					break;
+				case CLS_SPACE:
+					goto yield;
+				}
+				break;
+
+			yield:
+				fwrite(ap, sizeof(*ap), fp - ap, stdout);
+				fputc('\n', stdout);
+				st = ST_NONE;
+				ap = bp;
+				fp = NULL;
+				break;
+			}
+		}
+
+		npr = bp - rv->base;
+	} while ((rd = (const void*)YIELD(npr)));
+	return 0;
+}
+
+
+static int
+annotate1(const char *fn)
+{
+	struct cocore *snarf;
+	struct cocore *anno;
+	struct cocore *self;
+	int rc = 0;
+	int fd;
+
+	if (fn == NULL) {
+		fd = STDIN_FILENO;
+		fn = "-";
+	} else if ((fd = open(fn, O_RDONLY)) < 0) {
+		error("Error: cannot open file `%s'", fn);
+		return -1;
+	}
+
+	self = PREP();
+	snarf = START_PACK(
+		co_snarf, .next = self,
+		.clo = {.fd = fd});
+	anno = START_PACK(
+		co_anno, .next = self);
+
+	/* ping-pong relay between the corus
+	 * technically we could let the corus flip-flop call each other
+	 * but we'd like to filter bad input right away */
+	const struct co_snarf_retval_s *rd;
+	ssize_t npr = 0;
+	do {
+		rd = (const void*)NEXT1(snarf, npr);
+		npr = NEXT1(anno, rd);
+	} while (rd != NULL);
+
+	/* clean up */
+	close(fd);
+	return rc;
+}
 
 
 #include "finner.yucc"
+
+static int
+cmd_anno(struct yuck_cmd_anno_s argi[static 1U])
+{
+	size_t i = 0U;
+	int rc = 0;
+
+	if (!argi->nargs) {
+		goto one_off;
+	}
+	for (; i < argi->nargs; i++) {
+	one_off:
+		rc |= annotate1(argi->args[i]);
+	}
+	return rc & 1;
+}
 
 int
 main(int argc, char *argv[])
@@ -58,6 +306,15 @@ main(int argc, char *argv[])
 
 	/* get the coroutines going */
 	initialise_cocore();
+
+	switch (argi->cmd) {
+	case FINNER_CMD_ANNO:
+		rc = cmd_anno((void*)argi);
+		break;
+
+	default:
+		break;
+	}
 
 out:
 	yuck_free(argi);
