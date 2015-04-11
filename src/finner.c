@@ -155,10 +155,10 @@ DEFCORU(co_terms, {}, void *arg)
 			CLS_ALNUM,
 		} cl;
 		const char *bp = rd->buf;
+		const char *ap, *fp;
 		size_t ia = 0U;
 
-		for (const char *ap, *fp, *const ep = rd->buf + rd->bsz;
-		     bp < ep; bp++) {
+		for (const char *const ep = rd->buf + rd->bsz; bp < ep; bp++) {
 			if (UNLIKELY(*bp < 0)) {
 				cl = CLS_UNK;
 			} else if (*bp <= 0x20) {
@@ -240,12 +240,14 @@ DEFCORU(co_terms, {}, void *arg)
 
 		/* set up result */
 		rv->base = rd->buf;
-		if (UNLIKELY(!(rv->nannos = ia))) {
+		if (LIKELY((rv->nannos = ia))) {
+			/* calculate proper bounding box */
+			rv->bbox.sta = 0U;
+			rv->bbox.end = ap - rd->buf;
+		} else {
+			/* include everything in the bounding box */
 			rv->bbox.sta = 0U;
 			rv->bbox.end = bp - rd->buf;
-		} else {
-			rv->bbox.sta = rv->annos[0U].sta;
-			rv->bbox.end = rv->annos[ia - 1U].end;
 		}
 	} while ((rd = (const void*)YIELD(rv)));
 	return 0;
