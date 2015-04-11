@@ -240,9 +240,13 @@ DEFCORU(co_terms, {}, void *arg)
 
 		/* set up result */
 		rv->base = rd->buf;
-		rv->nannos = ia;
-		rv->bbox.sta = 0U;
-		rv->bbox.end = bp - rd->buf;
+		if (UNLIKELY(!(rv->nannos = ia))) {
+			rv->bbox.sta = 0U;
+			rv->bbox.end = bp - rd->buf;
+		} else {
+			rv->bbox.sta = rv->annos[0U].sta;
+			rv->bbox.end = rv->annos[ia - 1U].end;
+		}
 	} while ((rd = (const void*)YIELD(rv)));
 	return 0;
 }
