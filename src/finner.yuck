@@ -5,3 +5,9 @@ Usage: finner anno [FILE]...
 
 Annotate contents of FILE with recognised entities.
 If FILE is omitted stdin will be used.
+
+
+Usage: finner extr [FILE]...
+
+Extract recognised entities in FILE.
+If FILE is omitted stdin will be used.

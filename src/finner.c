@@ -264,10 +264,8 @@ DEFCORU(co_textr, {}, void *arg)
 			const size_t tz = ta->annos[i].end - ta->annos[i].sta;
 
 			fwrite(tp, sizeof(*tp), tz, stdout);
-			fputs("\ttoken", stdout);
-			fprintf(stdout, "\t[%zu,%zu]",
+			fprintf(stdout, "\ttoken\t[%zu,%zu]\n",
 				ta->annos[i].sta, ta->annos[i].end);
-			fputc('\n', stdout);
 		}
 	} while ((ta = (const void*)YIELD(0)));
 	return 0;
@@ -328,7 +326,7 @@ annotate1(const char *fn)
 	self = PREP();
 	snarf = START_PACK(co_snarf, .next = self, .clo = {.fd = fd});
 	terms = START_PACK(co_terms, .next = self);
-	tanno = START_PACK(co_textr, .next = self);
+	tanno = START_PACK(co_tanno, .next = self);
 
 	/* ping-pong relay between the corus
 	 * technically we could let the corus flip-flop call each other
@@ -341,6 +339,49 @@ annotate1(const char *fn)
 		} else if ((ta = NEXT1(terms, rd)) == NULL) {
 			break;
 		} else if (NEXT1(tanno, ta), 0) {
+			break;
+		}
+	}
+
+	/* clean up */
+	close(fd);
+	return rc;
+}
+
+static int
+extract1(const char *fn)
+{
+	struct cocore *snarf;
+	struct cocore *terms;
+	struct cocore *textr;
+	struct cocore *self;
+	int rc = 0;
+	int fd;
+
+	if (fn == NULL) {
+		fd = STDIN_FILENO;
+		fn = "-";
+	} else if ((fd = open(fn, O_RDONLY)) < 0) {
+		error("Error: cannot open file `%s'", fn);
+		return -1;
+	}
+
+	self = PREP();
+	snarf = START_PACK(co_snarf, .next = self, .clo = {.fd = fd});
+	terms = START_PACK(co_terms, .next = self);
+	textr = START_PACK(co_textr, .next = self);
+
+	/* ping-pong relay between the corus
+	 * technically we could let the corus flip-flop call each other
+	 * but we'd like to filter bad input right away */
+	const struct co_snarf_retval_s *rd = NULL;
+	const struct co_terms_retval_s *ta = NULL;
+	for (ssize_t npr = 0;; npr = ta->bbox.end) {
+		if ((rd = NEXT1(snarf, npr)) == NULL) {
+			break;
+		} else if ((ta = NEXT1(terms, rd)) == NULL) {
+			break;
+		} else if (NEXT1(textr, ta), 0) {
 			break;
 		}
 	}
@@ -369,6 +410,22 @@ cmd_anno(struct yuck_cmd_anno_s argi[static 1U])
 	return rc & 1;
 }
 
+static int
+cmd_extr(struct yuck_cmd_anno_s argi[static 1U])
+{
+	size_t i = 0U;
+	int rc = 0;
+
+	if (!argi->nargs) {
+		goto one_off;
+	}
+	for (; i < argi->nargs; i++) {
+	one_off:
+		rc |= extract1(argi->args[i]);
+	}
+	return rc & 1;
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -386,6 +443,10 @@ main(int argc, char *argv[])
 	switch (argi->cmd) {
 	case FINNER_CMD_ANNO:
 		rc = cmd_anno((void*)argi);
+		break;
+
+	case FINNER_CMD_EXTR:
+		rc = cmd_extr((void*)argi);
 		break;
 
 	default:
