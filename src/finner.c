@@ -264,6 +264,9 @@ DEFCORU(co_textr, {}, void *arg)
 			const size_t tz = ta->annos[i].end - ta->annos[i].sta;
 
 			fwrite(tp, sizeof(*tp), tz, stdout);
+			fputs("\ttoken", stdout);
+			fprintf(stdout, "\t[%zu,%zu]",
+				ta->annos[i].sta, ta->annos[i].end);
 			fputc('\n', stdout);
 		}
 	} while ((ta = (const void*)YIELD(0)));
