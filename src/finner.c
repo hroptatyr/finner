@@ -253,12 +253,63 @@ DEFCORU(co_terms, {}, void *arg)
 	return 0;
 }
 
+DEFCORU(co_textr, {}, void *arg)
+{
+	const struct co_terms_retval_s *ta = arg;
+
+	/* enter the main snarf loop */
+	do {
+		for (size_t i = 0U; i < ta->nannos; i++) {
+			const char *tp = ta->base + ta->annos[i].sta;
+			const size_t tz = ta->annos[i].end - ta->annos[i].sta;
+
+			fwrite(tp, sizeof(*tp), tz, stdout);
+			fputc('\n', stdout);
+		}
+	} while ((ta = (const void*)YIELD(0)));
+	return 0;
+}
+
+DEFCORU(co_tanno, {}, void *arg)
+{
+	const struct co_terms_retval_s *ta = arg;
+
+	/* enter the main snarf loop */
+	do {
+		const char *tp;
+		size_t tz;
+
+		/* the prefix*/
+		tp = ta->base + ta->bbox.sta;
+		tz = (ta->nannos ? ta->annos[0U].sta : ta->bbox.end)
+			- ta->bbox.sta;
+		fwrite(tp, sizeof(*tp), tz, stdout);
+
+		for (size_t i = 0U; i < ta->nannos; i++) {
+			tp = ta->base + ta->annos[i].sta;
+			tz = ta->annos[i].end - ta->annos[i].sta;
+
+			fputc('|', stdout);
+			fwrite(tp, sizeof(*tp), tz, stdout);
+
+			tp = ta->base + ta->annos[i].end;
+			tz = (i + 1U < ta->nannos
+			      ? ta->annos[i + 1U].sta : ta->bbox.end)
+				- ta->annos[i].end;
+			fputc('|', stdout);
+			fwrite(tp, sizeof(*tp), tz, stdout);
+		}
+	} while ((ta = (const void*)YIELD(0)));
+	return 0;
+}
+
 
 static int
 annotate1(const char *fn)
 {
 	struct cocore *snarf;
 	struct cocore *terms;
+	struct cocore *tanno;
 	struct cocore *self;
 	int rc = 0;
 	int fd;
@@ -274,6 +325,7 @@ annotate1(const char *fn)
 	self = PREP();
 	snarf = START_PACK(co_snarf, .next = self, .clo = {.fd = fd});
 	terms = START_PACK(co_terms, .next = self);
+	tanno = START_PACK(co_textr, .next = self);
 
 	/* ping-pong relay between the corus
 	 * technically we could let the corus flip-flop call each other
@@ -284,6 +336,8 @@ annotate1(const char *fn)
 		if ((rd = NEXT1(snarf, npr)) == NULL) {
 			break;
 		} else if ((ta = NEXT1(terms, rd)) == NULL) {
+			break;
+		} else if (NEXT1(tanno, ta), 0) {
 			break;
 		}
 	}
