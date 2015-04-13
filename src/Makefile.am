@@ -23,6 +23,8 @@ EXTRA_DIST += version.c.in
 noinst_LTLIBRARIES += libbidder.la
 libbidder_la_SOURCES = bidder.c bidder.h
 libbidder_la_SOURCES += figi.c figi.h
+libbidder_la_SOURCES += isin.c isin.h isin-cc.ccl
+BUILT_SOURCES += isin-cc.c
 
 bin_PROGRAMS += finner
 finner_SOURCES = finner.c finner.yuck
@@ -30,6 +32,11 @@ finner_SOURCES += nifty.h
 finner_LDADD = libbidder.la
 BUILT_SOURCES += finner.yucc
 
+
+## ccl->c
+SUFFIXES += .ccl
+.ccl.c:
+	$(AM_V_GEN) $(top_builddir)/build-aux/cccc < $< > $@ || $(RM) -- $@
 
 ## version rules
 version.c: version.c.in $(top_builddir)/.version

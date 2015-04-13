@@ -1,10 +1,10 @@
-/*** bidder.c -- determine token types
+/*** isin.c -- checker for ISO 6166 security idenfitication numbers
  *
  * Copyright (C) 2014-2015 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
- * This file is part of finner.
+ * This file is part of numchk.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,43 +34,82 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  ***/
-#if defined HAVE_CONFIG_H
-# include "config.h"
-#endif	/* HAVE_CONFIG_H */
-#include "bidder.h"
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <assert.h>
 #include "nifty.h"
-/* bidders */
-#include "figi.h"
 #include "isin.h"
 
-const char *const finner_bidstr[FINNER_NTOKENS] = {
-	[FINNER_TOKEN] = "term",
-	[FINNER_FIGI] = "figi",
-	[FINNER_ISIN] = "isin",
-};
+static const nmck_bid_t nul_bid;
 
-
-/* public api */
-finner_token_t
-finner_bid(const char *str, size_t len)
+/* allowed isin country codes */
+#include "isin-cc.c"
+
+static char
+calc_chk(const char *str, size_t len)
 {
-	finner_token_t winner = FINNER_TOKEN;
-	nmck_bid_t best = {0U};
+/* calculate the check digit for an expanded ISIN */
+	unsigned int sum = 0U;
 
-#define CHECK(token, bidder)				\
-	with (nmck_bid_t x = bidder(str, len)) {	\
-		if (x.bid > 127U) {			\
-			return token;			\
-		} else if (x.bid > best.bid) {		\
-			winner = token;			\
-			best = x;			\
-		}					\
+	for (size_t i = !(len % 2U); i < len; i += 2U) {
+		int code = (str[i] ^ '0') * 2;
+		sum += (code / 10) + (code % 10);
 	}
-
-	/* start the bidding */
-	CHECK(FINNER_FIGI, nmck_figi_bid);
-	CHECK(FINNER_ISIN, nmck_isin_bid);
-	return winner;
+	for (size_t i = (len % 2U); i < len; i += 2U) {
+		int code = (str[i] ^ '0');
+		sum += code;
+	}
+	/* sum can be at most 198, so check digit is */
+	return (char)(((200U - sum) % 10U) ^ '0');
 }
 
-/* bidder.c ends here */
+
+/* class implementation */
+nmck_bid_t
+nmck_isin_bid(const char *str, size_t len)
+{
+	char buf[24U];
+	size_t bsz = 0U;
+
+	/* common cases first */
+	if (len != 12) {
+		return nul_bid;
+	} else if (!valid_cc_p(str)) {
+		return nul_bid;
+	}
+
+	/* expand the left 11 digits */
+	for (size_t i = 0U; i < 11; i++) {
+		switch (str[i]) {
+		case '0' ... '9':
+			buf[bsz++] = str[i];
+			break;
+		case 'A' ... 'J':
+			buf[bsz++] = '1';
+			buf[bsz++] = (char)((str[i] - 'A') ^ '0');
+			break;
+		case 'K' ... 'T':
+			buf[bsz++] = '2';
+			buf[bsz++] = (char)((str[i] - 'K') ^ '0');
+			break;
+		case 'U' ... 'Z':
+			buf[bsz++] = '3';
+			buf[bsz++] = (char)((str[i] - 'U') ^ '0');
+			break;
+		default:
+			return nul_bid;
+		}
+	}
+	with (char chk = calc_chk(buf, bsz)) {
+		if (chk != str[11U]) {
+			/* record state but submit a bid */
+			return nul_bid;
+		}
+	}
+	/* bid bid bid */
+	return (nmck_bid_t){255U};
+}
+
+/* isin.c ends here */
