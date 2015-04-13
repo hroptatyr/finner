@@ -26,6 +26,7 @@ libbidder_la_SOURCES += figi.c figi.h
 libbidder_la_SOURCES += isin.c isin.h isin-cc.ccl
 BUILT_SOURCES += isin-cc.c
 libbidder_la_SOURCES += cusip.c cusip.h
+libbidder_la_SOURCES += sedol.c sedol.h
 
 bin_PROGRAMS += finner
 finner_SOURCES = finner.c finner.yuck

@@ -1,10 +1,10 @@
-/*** bidder.h -- determine token types
+/*** sedol.c -- checker for SEDOLs
  *
  * Copyright (C) 2014-2015 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
- * This file is part of finner.
+ * This file is part of numchk.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,40 +34,63 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  ***/
-#if !defined INCLUDED_bidder_h_
-#define INCLUDED_bidder_h_
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <assert.h>
+#include "nifty.h"
+#include "sedol.h"
 
-#include <stddef.h>
+static const nmck_bid_t nul_bid;
 
-typedef enum {
-	FINNER_TOKEN,
-	FINNER_FIGI,
-	FINNER_ISIN,
-	FINNER_CUSIP,
-	FINNER_SEDOL,
-	FINNER_NTOKENS
-} finner_token_t;
+static char
+calc_chk(const char *str, size_t UNUSED(len))
+{
+/* calculate the check digit for an expanded ISIN */
+	unsigned int w[] = {1U, 3U, 1U, 7U, 3U, 9U};
+	unsigned int sum = 0U;
 
-/**
- * We'll do anonymous bidding.  Every registered checker is asked in
- * turns to submit a tender.  The highest BID value will win.
- * The STATE value can be used by the bidder to record some state.
- *
- * For further optimisation, any bid >= 128U will end the bidding
- * process immediately. */
-typedef struct {
-	unsigned int bid;
-	unsigned int state;
-} nmck_bid_t;
+	/* use the left 6 digits */
+	for (size_t i = 0U; i < 6U; i++) {
+		unsigned int d;
 
-/**
- * A bidder class. */
-typedef nmck_bid_t(*nmck_bid_f)(const char *str, size_t len);
+		switch (str[i]) {
+		case '0' ... '9':
+			d = (str[i] ^ '0');
+			break;
+		case 'A' ... 'Z':
+			d = 10 + (str[i] - 'A');
+			break;
+		default:
+			return 0U;
+		}
 
-/**
- * Convenience routine to determine the token type. */
-extern finner_token_t finner_bid(const char *str, size_t len);
+		sum += w[i] * d;
+	}
 
-extern const char *const finner_bidstr[FINNER_NTOKENS];
+	/* sum can be at most 840, so check digit is */
+	return (char)(((840U - sum) % 10U) ^ '0');
+}
 
-#endif	/* INCLUDED_bidder_h_ */
+
+/* class implementation */
+nmck_bid_t
+nmck_sedol_bid(const char *str, size_t len)
+{
+	/* common cases first */
+	if (len != 7U) {
+		return nul_bid;
+	}
+
+	with (char chk = calc_chk(str, len)) {
+		if (!chk) {
+			return nul_bid;
+		} else if (chk != str[6U]) {
+			return nul_bid;
+		}
+	}
+	/* bid just any number really */
+	return (nmck_bid_t){63U};
+}
+
+/* sedol.c ends here */
