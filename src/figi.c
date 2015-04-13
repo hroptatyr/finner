@@ -1,10 +1,10 @@
-/*** bidder.h -- determine token types
+/*** figi.c -- checker for FIGIs
  *
  * Copyright (C) 2014-2015 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
- * This file is part of finner.
+ * This file is part of numchk.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,37 +34,91 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  ***/
-#if !defined INCLUDED_bidder_h_
-#define INCLUDED_bidder_h_
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <assert.h>
+#include "nifty.h"
+#include "figi.h"
 
-#include <stddef.h>
+static const nmck_bid_t nul_bid;
 
-typedef enum {
-	FINNER_TOKEN,
-	FINNER_FIGI,
-	FINNER_NTOKENS
-} finner_token_t;
+static char
+calc_chk(const char *str, size_t UNUSED(len))
+{
+/* calculate the check digit for an expanded ISIN */
+	unsigned int sum = 0U;
 
-/**
- * We'll do anonymous bidding.  Every registered checker is asked in
- * turns to submit a tender.  The highest BID value will win.
- * The STATE value can be used by the bidder to record some state.
- *
- * For further optimisation, any bid >= 128U will end the bidding
- * process immediately. */
-typedef struct {
-	unsigned int bid;
-	unsigned int state;
-} nmck_bid_t;
+	/* use the left 11 digits */
+	for (size_t i = 0U; i < 11U; i++) {
+		unsigned int d;
 
-/**
- * A bidder class. */
-typedef nmck_bid_t(*nmck_bid_f)(const char *str, size_t len);
+		switch (str[i]) {
+		case '0' ... '9':
+			d = (str[i] ^ '0');
+			break;
+		case 'B':
+		case 'C':
+		case 'D':
+		case 'F':
+		case 'G':
+		case 'H':
+		case 'J':
+			d = 10 + (str[i] - 'A');
+			break;
+		case 'K':
+		case 'L':
+		case 'M':
+		case 'N':
+		case 'P':
+		case 'Q':
+		case 'R':
+		case 'S':
+		case 'T':
+			d = 20 + (str[i] - 'K');
+			break;
+		case 'V':
+		case 'W':
+		case 'X':
+		case 'Y':
+		case 'Z':
+			d = 30 + (str[i] - 'U');
+			break;
+		default:
+			return '\0';
+		}
 
-/**
- * Convenience routine to determine the token type. */
-extern finner_token_t finner_bid(const char *str, size_t len);
+		if (i % 2U) {
+			d *= 2U;
+		}
+		sum += (d / 10U) + (d % 10U);
+	}
+	/* sum can be at most 665, so check digit is */
+	return (char)(((700U - sum) % 10U) ^ '0');
+}
 
-extern const char *const finner_bidstr[FINNER_NTOKENS];
+
+/* class implementation */
+nmck_bid_t
+nmck_figi_bid(const char *str, size_t len)
+{
+	/* common cases first */
+	if (len != 12U) {
+		return nul_bid;
+	} else if (str[0U] != 'B' || str[1U] != 'B' || str[2U] != 'G') {
+		/* currently only BB is registered as certified provider */
+		return nul_bid;
+	}
 
-#endif	/* INCLUDED_bidder_h_ */
+	with (char chk = calc_chk(str, len)) {
+		if (!chk) {
+			return nul_bid;
+		} else if (chk != str[11U]) {
+			return nul_bid;
+		}
+	}
+	/* bid high */
+	return (nmck_bid_t){255U};
+}
+
+/* figi.c ends here */

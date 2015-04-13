@@ -1,4 +1,4 @@
-/*** bidder.h -- determine token types
+/*** figi.h -- checker for FIGIs
  *
  * Copyright (C) 2014-2015 Sebastian Freundt
  *
@@ -34,37 +34,11 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  ***/
-#if !defined INCLUDED_bidder_h_
-#define INCLUDED_bidder_h_
+#if !defined INCLUDED_figi_h_
+#define INCLUDED_figi_h_
 
-#include <stddef.h>
+#include "bidder.h"
 
-typedef enum {
-	FINNER_TOKEN,
-	FINNER_FIGI,
-	FINNER_NTOKENS
-} finner_token_t;
+extern nmck_bid_t nmck_figi_bid(const char *str, size_t len);
 
-/**
- * We'll do anonymous bidding.  Every registered checker is asked in
- * turns to submit a tender.  The highest BID value will win.
- * The STATE value can be used by the bidder to record some state.
- *
- * For further optimisation, any bid >= 128U will end the bidding
- * process immediately. */
-typedef struct {
-	unsigned int bid;
-	unsigned int state;
-} nmck_bid_t;
-
-/**
- * A bidder class. */
-typedef nmck_bid_t(*nmck_bid_f)(const char *str, size_t len);
-
-/**
- * Convenience routine to determine the token type. */
-extern finner_token_t finner_bid(const char *str, size_t len);
-
-extern const char *const finner_bidstr[FINNER_NTOKENS];
-
-#endif	/* INCLUDED_bidder_h_ */
+#endif	/* INCLUDED_figi_h_ */

@@ -22,6 +22,7 @@ EXTRA_DIST += version.c.in
 
 noinst_LTLIBRARIES += libbidder.la
 libbidder_la_SOURCES = bidder.c bidder.h
+libbidder_la_SOURCES += figi.c figi.h
 
 bin_PROGRAMS += finner
 finner_SOURCES = finner.c finner.yuck

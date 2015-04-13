@@ -38,17 +38,36 @@
 # include "config.h"
 #endif	/* HAVE_CONFIG_H */
 #include "bidder.h"
+#include "nifty.h"
+/* bidders */
+#include "figi.h"
 
-const char *const finner_bidstr[] = {
-	"token",
+const char *const finner_bidstr[FINNER_NTOKENS] = {
+	[FINNER_TOKEN] = "token",
+	[FINNER_FIGI] = "figi",
 };
 
 
 /* public api */
-unsigned int
+finner_token_t
 finner_bid(const char *str, size_t len)
 {
-	return 0U;
+	finner_token_t winner = FINNER_TOKEN;
+	nmck_bid_t best = {0U};
+
+#define CHECK(token, bidder)				\
+	with (nmck_bid_t x = bidder(str, len)) {	\
+		if (x.bid > 127U) {			\
+			return token;			\
+		} else if (x.bid > best.bid) {		\
+			winner = token;			\
+			best = x;			\
+		}					\
+	}
+
+	/* start the bidding */
+	CHECK(FINNER_FIGI, nmck_figi_bid);
+	return winner;
 }
 
 /* bidder.c ends here */
