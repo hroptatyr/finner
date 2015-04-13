@@ -43,7 +43,7 @@
 #include "figi.h"
 
 const char *const finner_bidstr[FINNER_NTOKENS] = {
-	[FINNER_TOKEN] = "token",
+	[FINNER_TOKEN] = "term",
 	[FINNER_FIGI] = "figi",
 };
 
