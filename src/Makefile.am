@@ -23,6 +23,7 @@ EXTRA_DIST += version.c.in
 bin_PROGRAMS += finner
 finner_SOURCES = finner.c finner.yuck
 finner_SOURCES += nifty.h
+finner_SOURCES += bidder.c bidder.h
 BUILT_SOURCES += finner.yucc
 
 
