@@ -36,6 +36,8 @@ EXTRA_libcoru_la_SOURCES += coru/switch-x86_64.c
 
 bin_PROGRAMS += finner
 finner_SOURCES = finner.c finner.yuck
+finner_SOURCES += nifty.h
+finner_LDADD = libcoru.la
 BUILT_SOURCES += finner.yucc
 
 
