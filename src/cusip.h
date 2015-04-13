@@ -1,4 +1,4 @@
-/*** bidder.c -- determine token types
+/*** cusip.h -- checker for CUSIPs
  *
  * Copyright (C) 2014-2015 Sebastian Freundt
  *
@@ -34,46 +34,11 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  ***/
-#if defined HAVE_CONFIG_H
-# include "config.h"
-#endif	/* HAVE_CONFIG_H */
+#if !defined INCLUDED_cusip_h_
+#define INCLUDED_cusip_h_
+
 #include "bidder.h"
-#include "nifty.h"
-/* bidders */
-#include "figi.h"
-#include "isin.h"
-#include "cusip.h"
 
-const char *const finner_bidstr[FINNER_NTOKENS] = {
-	[FINNER_TOKEN] = "term",
-	[FINNER_FIGI] = "figi",
-	[FINNER_ISIN] = "isin",
-	[FINNER_CUSIP] = "cusip",
-};
+extern nmck_bid_t nmck_cusip_bid(const char *str, size_t len);
 
-
-/* public api */
-finner_token_t
-finner_bid(const char *str, size_t len)
-{
-	finner_token_t winner = FINNER_TOKEN;
-	nmck_bid_t best = {0U};
-
-#define CHECK(token, bidder)				\
-	with (nmck_bid_t x = bidder(str, len)) {	\
-		if (x.bid > 127U) {			\
-			return token;			\
-		} else if (x.bid > best.bid) {		\
-			winner = token;			\
-			best = x;			\
-		}					\
-	}
-
-	/* start the bidding */
-	CHECK(FINNER_FIGI, nmck_figi_bid);
-	CHECK(FINNER_ISIN, nmck_isin_bid);
-	CHECK(FINNER_CUSIP, nmck_cusip_bid);
-	return winner;
-}
-
-/* bidder.c ends here */
+#endif	/* INCLUDED_cusip_h_ */

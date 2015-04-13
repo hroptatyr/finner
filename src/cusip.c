@@ -1,10 +1,10 @@
-/*** bidder.c -- determine token types
+/*** cusip.c -- checker for CUSIPs
  *
  * Copyright (C) 2014-2015 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
- * This file is part of finner.
+ * This file is part of numchk.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,46 +34,86 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  ***/
-#if defined HAVE_CONFIG_H
-# include "config.h"
-#endif	/* HAVE_CONFIG_H */
-#include "bidder.h"
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 #include "nifty.h"
-/* bidders */
-#include "figi.h"
-#include "isin.h"
 #include "cusip.h"
 
-const char *const finner_bidstr[FINNER_NTOKENS] = {
-	[FINNER_TOKEN] = "term",
-	[FINNER_FIGI] = "figi",
-	[FINNER_ISIN] = "isin",
-	[FINNER_CUSIP] = "cusip",
-};
+static const nmck_bid_t nul_bid;
 
-
-/* public api */
-finner_token_t
-finner_bid(const char *str, size_t len)
+static unsigned int
+calc_chk(const char *str, size_t len)
 {
-	finner_token_t winner = FINNER_TOKEN;
-	nmck_bid_t best = {0U};
+/* calculate the check digit for an expanded ISIN */
+	unsigned int sum = 0U;
+	size_t i = 0U;
 
-#define CHECK(token, bidder)				\
-	with (nmck_bid_t x = bidder(str, len)) {	\
-		if (x.bid > 127U) {			\
-			return token;			\
-		} else if (x.bid > best.bid) {		\
-			winner = token;			\
-			best = x;			\
-		}					\
+	/* use the left 8 digits */
+	for (size_t j = 0U; j < 8U && i < len; i++) {
+		unsigned int d;
+
+		switch (str[i]) {
+		case '-':
+			/* ignore */
+			continue;
+		case '0' ... '9':
+			d = (str[i] ^ '0');
+			break;
+		case 'A' ... 'Z':
+			d = 10 + (str[i] - 'A');
+			break;
+		case '*':
+			d = 36;
+			break;
+		case '@':
+			d = 37;
+			break;
+		case '#':
+			d = 38;
+			break;
+		default:
+			return 0U;
+		}
+
+		if (j++ % 2U) {
+			d *= 2U;
+		}
+		sum += (d / 10U) + (d % 10U);
+	}
+	/* check if need to skip optional - */
+	if (LIKELY(i < len) && UNLIKELY(str[i] == '-')) {
+		i++;
 	}
 
-	/* start the bidding */
-	CHECK(FINNER_FIGI, nmck_figi_bid);
-	CHECK(FINNER_ISIN, nmck_isin_bid);
-	CHECK(FINNER_CUSIP, nmck_cusip_bid);
-	return winner;
+	/* sum can be at most 342, so check digit is */
+	return i << 8U ^ (((400U - sum) % 10U) ^ '0');
 }
 
-/* bidder.c ends here */
+
+/* class implementation */
+nmck_bid_t
+nmck_cusip_bid(const char *str, size_t len)
+{
+	/* common cases first */
+	if (len < 8U || len > 11U) {
+		return nul_bid;
+	}
+
+	with (unsigned int cc = calc_chk(str, len)) {
+		unsigned int consumed = cc >> 8U;
+		char chk = (char)(cc & 0xff);
+
+		if (!cc) {
+			return nul_bid;
+		} else if (consumed != len - 1U) {
+			return nul_bid;
+		} else if (chk != str[consumed]) {
+			return nul_bid;
+		}
+	}
+	/* bid higher than isin */
+	return (nmck_bid_t){63U};
+}
+
+/* cusip.c ends here */
