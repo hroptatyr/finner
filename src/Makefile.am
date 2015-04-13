@@ -20,10 +20,13 @@ SUFFIXES =
 CLEANFILES += version.c
 EXTRA_DIST += version.c.in
 
+noinst_LTLIBRARIES += libbidder.la
+libbidder_la_SOURCES = bidder.c bidder.h
+
 bin_PROGRAMS += finner
 finner_SOURCES = finner.c finner.yuck
 finner_SOURCES += nifty.h
-finner_SOURCES += bidder.c bidder.h
+finner_LDADD = libbidder.la
 BUILT_SOURCES += finner.yucc
 
 
