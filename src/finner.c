@@ -159,7 +159,8 @@ static const struct co_terms_retval_s {
 		CLS_ALNUM,
 	} cl;
 	const char *bp = rd->buf;
-	const char *ap, *fp;
+	const char *ap = rd->buf;
+	const char *fp = rd->buf;
 	size_t ia = 0U;
 
 	if (UNLIKELY(rv == NULL && rd == NULL)) {
