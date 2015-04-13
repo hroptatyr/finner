@@ -20,20 +20,6 @@ SUFFIXES =
 CLEANFILES += version.c
 EXTRA_DIST += version.c.in
 
-noinst_LTLIBRARIES += libcoru.la
-libcoru_la_SOURCES =
-EXTRA_libcoru_la_SOURCES =
-libcoru_la_SOURCES += coru/cocore.c coru/cocore.h
-libcoru_la_SOURCES += coru/switch.c coru/switch.h
-libcoru_la_SOURCES += coru/platform.h
-libcoru_la_SOURCES += coru/valgrind.h
-libcoru_la_SOURCES += coru/memcheck.h
-libcoru_la_SOURCES += coru.h
-EXTRA_libcoru_la_SOURCES += coru/switch-arm.c
-EXTRA_libcoru_la_SOURCES += coru/switch-ppc_osx.c
-EXTRA_libcoru_la_SOURCES += coru/switch-x86.c
-EXTRA_libcoru_la_SOURCES += coru/switch-x86_64.c
-
 bin_PROGRAMS += finner
 finner_SOURCES = finner.c finner.yuck
 finner_SOURCES += nifty.h
