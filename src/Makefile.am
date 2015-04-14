@@ -22,12 +22,15 @@ EXTRA_DIST += version.c.in
 
 noinst_LTLIBRARIES += libbidder.la
 libbidder_la_SOURCES = bidder.c bidder.h
+EXTRA_libbidder_la_SOURCES =
 libbidder_la_SOURCES += figi.c figi.h
-libbidder_la_SOURCES += isin.c isin.h isin-cc.ccl
+libbidder_la_SOURCES += isin.c isin.h
+EXTRA_libbidder_la_SOURCES += isin-cc.ccl
 BUILT_SOURCES += isin-cc.c
 libbidder_la_SOURCES += cusip.c cusip.h
 libbidder_la_SOURCES += sedol.c sedol.h
-libbidder_la_SOURCES += ccy.c ccy.h ccy-cc.ccl
+libbidder_la_SOURCES += ccy.c ccy.h
+EXTRA_libbidder_la_SOURCES += ccy-cc.ccl
 BUILT_SOURCES += ccy-cc.c
 
 bin_PROGRAMS += finner
