@@ -1,4 +1,4 @@
-/*** bidder.c -- determine token types
+/*** fxpair.c -- checker for FX pairs
  *
  * Copyright (C) 2014-2015 Sebastian Freundt
  *
@@ -34,52 +34,45 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  ***/
-#if defined HAVE_CONFIG_H
-# include "config.h"
-#endif	/* HAVE_CONFIG_H */
-#include "bidder.h"
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <assert.h>
 #include "nifty.h"
-/* bidders */
-#include "figi.h"
-#include "isin.h"
-#include "cusip.h"
-#include "sedol.h"
-#include "ccy.h"
 #include "fxpair.h"
-#include "amt.h"
 
-const char *const finner_bidstr[FINNER_NTOKENS] = {
-	[FINNER_TERM] = "term",
-	[FINNER_FIGI] = "figi",
-	[FINNER_ISIN] = "isin",
-	[FINNER_CUSIP] = "cusip",
-	[FINNER_SEDOL] = "sedol",
-	[FINNER_CCY] = "ccy",
-	[FINNER_FXPAIR] = "fxpair",
-	[FINNER_AMT] = "amt",
-};
+/* allowed isin country codes */
+#include "fxpair-cc.c"
 
 
-/* public api */
+/* class implementation */
 fn_bid_t
-finner_bid(const char *str, size_t len)
+fn_fxpair_bid(const char *str, size_t len)
 {
-#define CHECK(bidder)				\
-	with (fn_bid_t x = bidder(str, len)) {		\
-		if (x.bid) {				\
-			return x;			\
-		}					\
+	/* common cases first */
+	if (len < 6U || len > 7U) {
+		return fn_nul_bid;
+	} else if (!valid_cc_p(str + 0U)) {
+		return fn_nul_bid;
+	}
+	with (const char *sp = str + 3U) {
+		switch (*sp) {
+		case '.':
+		case ':':
+		case '/':
+			sp++;
+		default:
+			break;
+		}
+		if (!valid_cc_p(sp)) {
+			return fn_nul_bid;
+		} else if (!memcmp(str, sp, 3U)) {
+			return fn_nul_bid;
+		}
 	}
 
-	/* start the bidding */
-	CHECK(fn_figi_bid);
-	CHECK(fn_isin_bid);
-	CHECK(fn_cusip_bid);
-	CHECK(fn_sedol_bid);
-	CHECK(fn_ccy_bid);
-	CHECK(fn_fxpair_bid);
-	CHECK(fn_amt_bid);
-	return fn_nul_bid;
+	/* bid just any number really */
+	return (fn_bid_t){FINNER_FXPAIR};
 }
 
-/* bidder.c ends here */
+/* fxpair.c ends here */
