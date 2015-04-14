@@ -40,8 +40,6 @@
 #include "nifty.h"
 #include "cusip.h"
 
-static const nmck_bid_t nul_bid;
-
 static unsigned int
 calc_chk(const char *str, size_t len)
 {
@@ -92,12 +90,12 @@ calc_chk(const char *str, size_t len)
 
 
 /* class implementation */
-nmck_bid_t
-nmck_cusip_bid(const char *str, size_t len)
+fn_bid_t
+fn_cusip_bid(const char *str, size_t len)
 {
 	/* common cases first */
 	if (len < 8U || len > 11U) {
-		return nul_bid;
+		return fn_nul_bid;
 	}
 
 	with (unsigned int cc = calc_chk(str, len)) {
@@ -105,15 +103,15 @@ nmck_cusip_bid(const char *str, size_t len)
 		char chk = (char)(cc & 0xff);
 
 		if (!cc) {
-			return nul_bid;
+			return fn_nul_bid;
 		} else if (consumed != len - 1U) {
-			return nul_bid;
+			return fn_nul_bid;
 		} else if (chk != str[consumed]) {
-			return nul_bid;
+			return fn_nul_bid;
 		}
 	}
 	/* bid higher than isin */
-	return (nmck_bid_t){63U};
+	return (fn_bid_t){FINNER_CUSIP};
 }
 
 /* cusip.c ends here */

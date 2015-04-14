@@ -40,7 +40,7 @@
 #include <stddef.h>
 
 typedef enum {
-	FINNER_TOKEN,
+	FINNER_TERM,
 	FINNER_FIGI,
 	FINNER_ISIN,
 	FINNER_CUSIP,
@@ -48,7 +48,7 @@ typedef enum {
 	FINNER_CCY,
 	FINNER_AMT,
 	FINNER_NTOKENS
-} finner_token_t;
+} fn_tok_t;
 
 /**
  * We'll do anonymous bidding.  Every registered checker is asked in
@@ -58,17 +58,19 @@ typedef enum {
  * For further optimisation, any bid >= 128U will end the bidding
  * process immediately. */
 typedef struct {
-	unsigned int bid;
+	fn_tok_t bid;
 	unsigned int state;
-} nmck_bid_t;
+} fn_bid_t;
+
+#define fn_nul_bid	((fn_bid_t){FINNER_TERM})
 
 /**
  * A bidder class. */
-typedef nmck_bid_t(*nmck_bid_f)(const char *str, size_t len);
+typedef fn_bid_t(*fn_bid_f)(const char *str, size_t len);
 
 /**
  * Convenience routine to determine the token type. */
-extern finner_token_t finner_bid(const char *str, size_t len);
+extern fn_bid_t finner_bid(const char *str, size_t len);
 
 extern const char *const finner_bidstr[FINNER_NTOKENS];
 

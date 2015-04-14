@@ -41,12 +41,10 @@
 #include "nifty.h"
 #include "amt.h"
 
-static const nmck_bid_t nul_bid;
-
 
 /* class implementation */
-nmck_bid_t
-nmck_amt_bid(const char *str, size_t len)
+fn_bid_t
+fn_amt_bid(const char *str, size_t len)
 {
 	const char *sp = str;
 	const char *const ep = str + len;
@@ -58,14 +56,14 @@ nmck_amt_bid(const char *str, size_t len)
 	if (*sp == '0') {
 		/* demand decimal dot now */
 		if (*++sp != '.') {
-			return nul_bid;
+			return fn_nul_bid;
 		}
 	} else if (!(*sp >= '1' && *sp <= '9')) {
-		return nul_bid;
+		return fn_nul_bid;
 	}
 	/* just one digit doesn't count */
 	if (UNLIKELY(!(ep - ++sp))) {
-		return nul_bid;
+		return fn_nul_bid;
 	}
 	/* only digits for now */
 	for (; sp < ep; sp++) {
@@ -80,15 +78,15 @@ nmck_amt_bid(const char *str, size_t len)
 			/* only allow digits from now on */
 			for (; sp < ep; sp++) {
 				if (!(*sp >= '0' && *sp <= '9')) {
-					return nul_bid;
+					return fn_nul_bid;
 				}
 			}
 			break;
 		default:
-			return nul_bid;
+			return fn_nul_bid;
 		}
 	}
-	return (nmck_bid_t){15U};
+	return (fn_bid_t){FINNER_AMT};
 }
 
 /* amt.c ends here */

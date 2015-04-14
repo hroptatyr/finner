@@ -39,6 +39,6 @@
 
 #include "bidder.h"
 
-extern nmck_bid_t nmck_isin_bid(const char *str, size_t len);
+extern fn_bid_t fn_isin_bid(const char *str, size_t len);
 
 #endif	/* INCLUDED_isin_h_ */

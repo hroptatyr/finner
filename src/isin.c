@@ -42,8 +42,6 @@
 #include "nifty.h"
 #include "isin.h"
 
-static const nmck_bid_t nul_bid;
-
 /* allowed isin country codes */
 #include "isin-cc.c"
 
@@ -67,17 +65,17 @@ calc_chk(const char *str, size_t len)
 
 
 /* class implementation */
-nmck_bid_t
-nmck_isin_bid(const char *str, size_t len)
+fn_bid_t
+fn_isin_bid(const char *str, size_t len)
 {
 	char buf[24U];
 	size_t bsz = 0U;
 
 	/* common cases first */
 	if (len != 12) {
-		return nul_bid;
+		return fn_nul_bid;
 	} else if (!valid_cc_p(str)) {
-		return nul_bid;
+		return fn_nul_bid;
 	}
 
 	/* expand the left 11 digits */
@@ -99,17 +97,17 @@ nmck_isin_bid(const char *str, size_t len)
 			buf[bsz++] = (char)((str[i] - 'U') ^ '0');
 			break;
 		default:
-			return nul_bid;
+			return fn_nul_bid;
 		}
 	}
 	with (char chk = calc_chk(buf, bsz)) {
 		if (chk != str[11U]) {
 			/* record state but submit a bid */
-			return nul_bid;
+			return fn_nul_bid;
 		}
 	}
 	/* bid bid bid */
-	return (nmck_bid_t){255U};
+	return (fn_bid_t){FINNER_ISIN};
 }
 
 /* isin.c ends here */

@@ -273,12 +273,12 @@ static const struct co_terms_retval_s {
 /* bidders or higher level stuff that takes a terms retval */
 static const struct co_tbids_retval_s {
 	size_t nbids;
-	unsigned int bids[];
+	fn_bid_t bids[];
 } *co_tbids(const struct co_terms_retval_s *ta)
 {
 	static struct co_tbids_retval_s *rv;
 	static size_t rz;
-#define TBIDS_EXTRA	(sizeof(*rv) / sizeof(*rv->bids))
+#define TBIDS_EXTRA	(sizeof(*rv->bids) / sizeof(*rv))
 
 	if (UNLIKELY(rv == NULL && ta == NULL)) {
 		/* just return */
@@ -310,10 +310,11 @@ co_textr(const struct co_terms_retval_s *ta, const struct co_tbids_retval_s *tb)
 	for (size_t i = 0U; i < ta->nannos; i++) {
 		const char *tp = ta->base + ta->annos[i].sta;
 		const size_t tz = ta->annos[i].end - ta->annos[i].sta;
+		const fn_tok_t t = tb->bids[i].bid;
 
 		fwrite(tp, sizeof(*tp), tz, stdout);
 		fprintf(stdout, "\t%s\t[%zu,%zu]\n",
-			finner_bidstr[tb->bids[i]],
+			finner_bidstr[t],
 			ta->annos[i].sta, ta->annos[i].end);
 	}
 	return;
