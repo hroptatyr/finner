@@ -20,11 +20,31 @@ SUFFIXES =
 CLEANFILES += version.c
 EXTRA_DIST += version.c.in
 
+noinst_LTLIBRARIES += libbidder.la
+libbidder_la_SOURCES = bidder.c bidder.h
+EXTRA_libbidder_la_SOURCES =
+libbidder_la_SOURCES += figi.c figi.h
+libbidder_la_SOURCES += isin.c isin.h
+EXTRA_libbidder_la_SOURCES += isin-cc.ccl
+BUILT_SOURCES += isin-cc.c
+libbidder_la_SOURCES += cusip.c cusip.h
+libbidder_la_SOURCES += sedol.c sedol.h
+libbidder_la_SOURCES += ccy.c ccy.h
+EXTRA_libbidder_la_SOURCES += ccy-cc.ccl
+BUILT_SOURCES += ccy-cc.c
+libbidder_la_SOURCES += amt.c amt.h
+
 bin_PROGRAMS += finner
 finner_SOURCES = finner.c finner.yuck
 finner_SOURCES += nifty.h
+finner_LDADD = libbidder.la
 BUILT_SOURCES += finner.yucc
 
+
+## ccl->c
+SUFFIXES += .ccl
+.ccl.c:
+	$(AM_V_GEN) $(top_builddir)/build-aux/cccc < $< > $@ || $(RM) -- $@
 
 ## version rules
 version.c: version.c.in $(top_builddir)/.version

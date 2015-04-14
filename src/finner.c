@@ -48,6 +48,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <assert.h>
+#include "bidder.h"
 #include "nifty.h"
 
 struct anno_s {
@@ -158,7 +159,8 @@ static const struct co_terms_retval_s {
 		CLS_ALNUM,
 	} cl;
 	const char *bp = rd->buf;
-	const char *ap, *fp;
+	const char *ap = rd->buf;
+	const char *fp = rd->buf;
 	size_t ia = 0U;
 
 	if (UNLIKELY(rv == NULL && rd == NULL)) {
@@ -268,22 +270,57 @@ static const struct co_terms_retval_s {
 	return rv;
 }
 
+/* bidders or higher level stuff that takes a terms retval */
+static const struct co_tbids_retval_s {
+	size_t nbids;
+	unsigned int bids[];
+} *co_tbids(const struct co_terms_retval_s *ta)
+{
+	static struct co_tbids_retval_s *rv;
+	static size_t rz;
+#define TBIDS_EXTRA	(sizeof(*rv) / sizeof(*rv->bids))
+
+	if (UNLIKELY(rv == NULL && ta == NULL)) {
+		/* just return */
+		return NULL;
+	} else if (UNLIKELY(ta == NULL)) {
+		free(rv);
+		rv = NULL;
+		return NULL;
+	} else if (UNLIKELY(ta->nannos > rz)) {
+		/* scale to number of annos */
+		size_t nuz = (ta->nannos + TBIDS_EXTRA + 4095U) & ~4095U;
+		rv = realloc(rv, nuz * sizeof(*rv->bids));
+		rz = nuz - TBIDS_EXTRA;
+	}
+
+	for (size_t i = 0U; i < ta->nannos; i++) {
+		const char *tp = ta->base + ta->annos[i].sta;
+		const size_t tz = ta->annos[i].end - ta->annos[i].sta;
+
+		rv->bids[i] = finner_bid(tp, tz);
+	}
+	return rv;
+}
+
+/* terminators */
 static void
-co_textr(const struct co_terms_retval_s *ta)
+co_textr(const struct co_terms_retval_s *ta, const struct co_tbids_retval_s *tb)
 {
 	for (size_t i = 0U; i < ta->nannos; i++) {
 		const char *tp = ta->base + ta->annos[i].sta;
 		const size_t tz = ta->annos[i].end - ta->annos[i].sta;
 
 		fwrite(tp, sizeof(*tp), tz, stdout);
-		fprintf(stdout, "\ttoken\t[%zu,%zu]\n",
+		fprintf(stdout, "\t%s\t[%zu,%zu]\n",
+			finner_bidstr[tb->bids[i]],
 			ta->annos[i].sta, ta->annos[i].end);
 	}
 	return;
 }
 
 static void
-co_tanno(const struct co_terms_retval_s *ta)
+co_tanno(const struct co_terms_retval_s *ta, const struct co_tbids_retval_s *tb)
 {
 	const char *tp;
 	size_t tz;
@@ -316,6 +353,7 @@ annotate1(const char *fn)
 {
 	const struct co_snarf_retval_s *rd = NULL;
 	const struct co_terms_retval_s *ta = NULL;
+	const struct co_tbids_retval_s *tb = NULL;
 	int rc = 0;
 	int fd;
 
@@ -332,7 +370,9 @@ annotate1(const char *fn)
 			break;
 		} else if ((ta = co_terms(rd)) == NULL) {
 			break;
-		} else if (co_tanno(ta), 0) {
+		} else if ((tb = co_tbids(ta)) == NULL) {
+			break;
+		} else if (co_tanno(ta, tb), 0) {
 			break;
 		}
 	}
@@ -347,6 +387,7 @@ extract1(const char *fn)
 {
 	const struct co_snarf_retval_s *rd = NULL;
 	const struct co_terms_retval_s *ta = NULL;
+	const struct co_tbids_retval_s *tb = NULL;
 	int rc = 0;
 	int fd;
 
@@ -363,7 +404,9 @@ extract1(const char *fn)
 			break;
 		} else if ((ta = co_terms(rd)) == NULL) {
 			break;
-		} else if (co_textr(ta), 0) {
+		} else if ((tb = co_tbids(ta)) == NULL) {
+			break;
+		} else if (co_textr(ta, tb), 0) {
 			break;
 		}
 	}
