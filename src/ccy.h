@@ -1,4 +1,4 @@
-/*** bidder.c -- determine token types
+/*** ccy.h -- checker for currencies
  *
  * Copyright (C) 2014-2015 Sebastian Freundt
  *
@@ -34,52 +34,11 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  ***/
-#if defined HAVE_CONFIG_H
-# include "config.h"
-#endif	/* HAVE_CONFIG_H */
+#if !defined INCLUDED_ccy_h_
+#define INCLUDED_ccy_h_
+
 #include "bidder.h"
-#include "nifty.h"
-/* bidders */
-#include "figi.h"
-#include "isin.h"
-#include "cusip.h"
-#include "sedol.h"
-#include "ccy.h"
 
-const char *const finner_bidstr[FINNER_NTOKENS] = {
-	[FINNER_TOKEN] = "term",
-	[FINNER_FIGI] = "figi",
-	[FINNER_ISIN] = "isin",
-	[FINNER_CUSIP] = "cusip",
-	[FINNER_SEDOL] = "sedol",
-	[FINNER_CCY] = "ccy",
-};
+extern nmck_bid_t nmck_ccy_bid(const char *str, size_t len);
 
-
-/* public api */
-finner_token_t
-finner_bid(const char *str, size_t len)
-{
-	finner_token_t winner = FINNER_TOKEN;
-	nmck_bid_t best = {0U};
-
-#define CHECK(token, bidder)				\
-	with (nmck_bid_t x = bidder(str, len)) {	\
-		if (x.bid > 127U) {			\
-			return token;			\
-		} else if (x.bid > best.bid) {		\
-			winner = token;			\
-			best = x;			\
-		}					\
-	}
-
-	/* start the bidding */
-	CHECK(FINNER_FIGI, nmck_figi_bid);
-	CHECK(FINNER_ISIN, nmck_isin_bid);
-	CHECK(FINNER_CUSIP, nmck_cusip_bid);
-	CHECK(FINNER_SEDOL, nmck_sedol_bid);
-	CHECK(FINNER_CCY, nmck_ccy_bid);
-	return winner;
-}
-
-/* bidder.c ends here */
+#endif	/* INCLUDED_ccy_h_ */

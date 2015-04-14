@@ -45,6 +45,7 @@ typedef enum {
 	FINNER_ISIN,
 	FINNER_CUSIP,
 	FINNER_SEDOL,
+	FINNER_CCY,
 	FINNER_NTOKENS
 } finner_token_t;
 
