@@ -1,4 +1,4 @@
 /* -*- c -*- */
 #include "version.h"
 
-const char nmck_version_string[] = "YUCK_SCMVER_VERSION";
+const char finner_version_string[] = "YUCK_SCMVER_VERSION";
