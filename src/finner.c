@@ -74,6 +74,14 @@ error(const char *fmt, ...)
 	return;
 }
 
+static inline void*
+recalloc(void *old, size_t oldnmemb, size_t newnmemb, size_t size)
+{
+	old = realloc(old, newnmemb * size);
+	memset((char*)old + oldnmemb * size, 0, (newnmemb - oldnmemb) * size);
+	return old;
+}
+
 
 static const struct co_snarf_retval_s {
 	const char *buf;
@@ -278,7 +286,7 @@ static const struct co_tbids_retval_s {
 {
 	static struct co_tbids_retval_s *rv;
 	static size_t rz;
-#define TBIDS_EXTRA	(sizeof(*rv->bids) / sizeof(*rv))
+#define TBIDS_EXTRA	(sizeof(*rv) / sizeof(*rv->bids))
 
 	if (UNLIKELY(rv == NULL && ta == NULL)) {
 		/* just return */
@@ -290,7 +298,8 @@ static const struct co_tbids_retval_s {
 	} else if (UNLIKELY(ta->nannos > rz)) {
 		/* scale to number of annos */
 		size_t nuz = (ta->nannos + TBIDS_EXTRA + 4095U) & ~4095U;
-		rv = realloc(rv, nuz * sizeof(*rv->bids));
+
+		rv = recalloc(rv, rz + TBIDS_EXTRA, nuz, sizeof(*rv->bids));
 		rz = nuz - TBIDS_EXTRA;
 	}
 
