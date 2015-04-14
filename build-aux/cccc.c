@@ -37,27 +37,20 @@
 /***
  * The input to this compiler is of the form
  *
- *   CC [\t LEN]
+ *   CC[C]
  *   ...
  *
  * so for instance
  *
- *   DE	17
- *   AU	22
+ *   DEM
+ *   AUD
  *
  * and this compiler will emit a C file with the following routine
  *
  *   static bool valid_cc_p(const char *str);
  *
  * that can be used to query whether the country code in STR has been
- * mentioned in the input.  While the length argument is optional, if
- * any of the lines in the input contains a length, the following
- * routine will also be emitted:
- *
- *   static unsigned int cc_len(const char *str);
- *
- * that maps a valid country code to its length argument.  It won't
- * check for invalid country codes though. */
+ * mentioned in the input. */
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif	/* HAVE_CONFIG_H */
@@ -69,18 +62,16 @@
 
 struct cclen_s {
 	char cc[4U];
-	uint_fast8_t len;
 };
 
 static struct cclen_s *lst;
 static size_t lnt;
 static size_t lzt;
-static bool has_lens;
+static bool has_3chars;
 
 static int
 ccl_add(const char ln[static 2U], size_t len)
 {
-	long unsigned int l;
 	size_t i;
 
 	(void)len;
@@ -95,9 +86,8 @@ fatal: insufficient memory to compile the input\n", stderr);
 		lzt = nuz;
 	}
 
-	/* read the length argument */
-	if ((l = strtoul(ln + 2, NULL, 10))) {
-		has_lens = true;
+	if (ln[2U] >= 'A' && ln[2U] <= 'Z') {
+		has_3chars = true;
 	}
 
 	/* check it's not there already */
@@ -105,16 +95,15 @@ fatal: insufficient memory to compile the input\n", stderr);
 		if (lst[i].cc[0U] == ln[0U] &&
 		    lst[i].cc[1U] == ln[1U]) {
 			/* yep, there he is */
-			lst[i].len = (uint_fast8_t)l;
+			lst[i].cc[2U] = ln[2U];
 			return 0;
 		}
 	}
 	/* otherwise add */
 	lst[i].cc[0U] = ln[0U];
 	lst[i].cc[1U] = ln[1U];
-	lst[i].cc[2U] = ln[2U] >= 'A' ? ln[2U] : '\0';
-	lst[i].cc[3U] = ln[2U] >= 'A' && ln[3U] >= 'A' ? ln[3U] : '\0';
-	lst[i].len = (uint_fast8_t)l;
+	lst[i].cc[2U] = ln[2U];
+	lst[i].cc[3U] = '\0';
 	lnt++;
 	return 1;
 }
@@ -145,7 +134,7 @@ getline() or fgetln() support missing.\n", stderr);
 #include <stdbool.h>\n\
 #include <stdint.h>\n");
 
-	if (lnt && lst->cc[2U] >= 'A' && lst->cc[2U] <= 'Z') {
+	if (has_3chars) {
 		/* three letter codes, we need popcnt */
 		puts("\
 static unsigned int\n\
@@ -180,8 +169,8 @@ valid_cc_p(const char cc[static 2U])\n\
 	}
 	puts("\
 	};");
-	if (lnt && lst->cc[2U] >= 'A' && lst->cc[2U] <= 'Z') {
-		/* three letter codes */
+	if (has_3chars) {
+		/* three-letter codes */
 		puts("\
 	static const struct {\n\
 		char _c[16U];\n\
@@ -210,6 +199,7 @@ valid_cc_p(const char cc[static 2U])\n\
 		}\n\
 	}");
 	} else {
+		/* two-letter codes */
 		puts("\
 \n\
 	if (cc[0U] >= 'A' && cc[0U] <= 'Z' &&\n\
@@ -224,79 +214,6 @@ valid_cc_p(const char cc[static 2U])\n\
 #undef ALLOW\n\
 #undef AND\n\
 }");
-
-	if (has_lens) {
-		unsigned off = 0U;
-
-		puts("\
-static unsigned int\n\
-cc_len(const char cc[static 2U])\n\
-{\n\
-#define C2I(x)			((x) - 'A')\n\
-#define COUNTRIES_WITH(x)	[C2I(x) * 2U] =\n\
-#define THERE_ARE(x)		x\n\
-#define AT(x)			, 2U * x\n\
-	static uint_fast16_t _offs[] = {");
-
-		for (char c = 'A'; c <= 'Z'; c++) {
-			unsigned cnt = 0U;
-			for (size_t i = 0U; i < lnt; i++) {
-				if (lst[i].cc[0U] == c) {
-					cnt++;
-				}
-			}
-			printf("\
-		COUNTRIES_WITH('%c') THERE_ARE(%u) AT(%u),\n", c, cnt, off);
-			off += cnt;
-		}
-
-		puts("\
-	};\n\
-	static uint_fast8_t _cc[] = {");
-
-		/* the most idiotic sorting ever */
-		for (char c1 = 'A'; c1 <= 'Z'; c1++) {
-			printf("\
-		/* %c */\n\
-		", c1);
-			for (char c2 = 'A'; c2 <= 'Z'; c2++) {
-				for (size_t i = 0U; i < lnt; i++) {
-					if (lst[i].cc[0U] == c1 &&
-					    lst[i].cc[1U] == c2) {
-						printf("\
-'%c', ", c2);
-					}
-				}
-			}
-			for (char c2 = 'A'; c2 <= 'Z'; c2++) {
-				for (size_t i = 0U; i < lnt; i++) {
-					if (lst[i].cc[0U] == c1 &&
-					    lst[i].cc[1U] == c2) {
-						printf("\
-%hhu, ", lst[i].len);
-					}
-				}
-			}
-			putchar('\n');
-		}
-		puts("\
-	};\n\
-	const unsigned int off = _offs[C2I(cc[0U]) * 2U + 1U];\n\
-	const unsigned int len = _offs[C2I(cc[0U]) * 2U + 0U];\n\
-	unsigned i;\n\
-\n\
-	for (i = off; i < off + len; i++) {\n\
-		if (_cc[i] == cc[1U]) {\n\
-			return _cc[i + len];\n\
-		}\n\
-	}\n\
-	return 0;\n\
-#undef C2I\n\
-#undef COUNTRIES_WITH\n\
-#undef THERE_ARE\n\
-#undef AT\n\
-}");
-	}
 
 	if (lst) {
 		free(lst);
