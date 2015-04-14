@@ -45,6 +45,7 @@
 #include "cusip.h"
 #include "sedol.h"
 #include "ccy.h"
+#include "amt.h"
 
 const char *const finner_bidstr[FINNER_NTOKENS] = {
 	[FINNER_TOKEN] = "term",
@@ -53,6 +54,7 @@ const char *const finner_bidstr[FINNER_NTOKENS] = {
 	[FINNER_CUSIP] = "cusip",
 	[FINNER_SEDOL] = "sedol",
 	[FINNER_CCY] = "ccy",
+	[FINNER_AMT] = "amt",
 };
 
 
@@ -79,6 +81,7 @@ finner_bid(const char *str, size_t len)
 	CHECK(FINNER_CUSIP, nmck_cusip_bid);
 	CHECK(FINNER_SEDOL, nmck_sedol_bid);
 	CHECK(FINNER_CCY, nmck_ccy_bid);
+	CHECK(FINNER_AMT, nmck_amt_bid);
 	return winner;
 }
 

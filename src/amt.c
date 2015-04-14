@@ -1,4 +1,4 @@
-/*** bidder.h -- determine token types
+/*** amt.c -- checker for amounts
  *
  * Copyright (C) 2014-2015 Sebastian Freundt
  *
@@ -34,42 +34,61 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  ***/
-#if !defined INCLUDED_bidder_h_
-#define INCLUDED_bidder_h_
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <assert.h>
+#include "nifty.h"
+#include "amt.h"
 
-#include <stddef.h>
+static const nmck_bid_t nul_bid;
 
-typedef enum {
-	FINNER_TOKEN,
-	FINNER_FIGI,
-	FINNER_ISIN,
-	FINNER_CUSIP,
-	FINNER_SEDOL,
-	FINNER_CCY,
-	FINNER_AMT,
-	FINNER_NTOKENS
-} finner_token_t;
+
+/* class implementation */
+nmck_bid_t
+nmck_amt_bid(const char *str, size_t len)
+{
+	const char *sp = str;
+	const char *const ep = str + len;
 
-/**
- * We'll do anonymous bidding.  Every registered checker is asked in
- * turns to submit a tender.  The highest BID value will win.
- * The STATE value can be used by the bidder to record some state.
- *
- * For further optimisation, any bid >= 128U will end the bidding
- * process immediately. */
-typedef struct {
-	unsigned int bid;
-	unsigned int state;
-} nmck_bid_t;
+	if (UNLIKELY(*sp == '-')) {
+		/* allow leading `-' */
+		sp++;
+	}
+	if (*sp == '0') {
+		/* demand decimal dot now */
+		if (*++sp != '.') {
+			return nul_bid;
+		}
+	} else if (!(*sp >= '1' && *sp <= '9')) {
+		return nul_bid;
+	}
+	/* just one digit doesn't count */
+	if (UNLIKELY(!(ep - ++sp))) {
+		return nul_bid;
+	}
+	/* only digits for now */
+	for (; sp < ep; sp++) {
+		if (!(*sp >= '0' && *sp <= '9')) {
+			break;
+		}
+	}
+	if (sp < ep) {
+		/* might be `.' or `,' */
+		switch (*sp++) {
+		case '.':
+			/* only allow digits from now on */
+			for (; sp < ep; sp++) {
+				if (!(*sp >= '0' && *sp <= '9')) {
+					return nul_bid;
+				}
+			}
+			break;
+		default:
+			return nul_bid;
+		}
+	}
+	return (nmck_bid_t){15U};
+}
 
-/**
- * A bidder class. */
-typedef nmck_bid_t(*nmck_bid_f)(const char *str, size_t len);
-
-/**
- * Convenience routine to determine the token type. */
-extern finner_token_t finner_bid(const char *str, size_t len);
-
-extern const char *const finner_bidstr[FINNER_NTOKENS];
-
-#endif	/* INCLUDED_bidder_h_ */
+/* amt.c ends here */

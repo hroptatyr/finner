@@ -32,6 +32,7 @@ libbidder_la_SOURCES += sedol.c sedol.h
 libbidder_la_SOURCES += ccy.c ccy.h
 EXTRA_libbidder_la_SOURCES += ccy-cc.ccl
 BUILT_SOURCES += ccy-cc.c
+libbidder_la_SOURCES += amt.c amt.h
 
 bin_PROGRAMS += finner
 finner_SOURCES = finner.c finner.yuck
