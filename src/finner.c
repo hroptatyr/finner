@@ -74,6 +74,14 @@ error(const char *fmt, ...)
 	return;
 }
 
+static inline void*
+recalloc(void *old, size_t oldnmemb, size_t newnmemb, size_t size)
+{
+	old = realloc(old, newnmemb * size);
+	memset((char*)old + oldnmemb * size, 0, (newnmemb - oldnmemb) * size);
+	return old;
+}
+
 
 static const struct co_snarf_retval_s {
 	const char *buf;
@@ -278,7 +286,7 @@ static const struct co_tbids_retval_s {
 {
 	static struct co_tbids_retval_s *rv;
 	static size_t rz;
-#define TBIDS_EXTRA	(sizeof(*rv->bids) / sizeof(*rv))
+#define TBIDS_EXTRA	(sizeof(*rv) / sizeof(*rv->bids))
 
 	if (UNLIKELY(rv == NULL && ta == NULL)) {
 		/* just return */
@@ -290,7 +298,8 @@ static const struct co_tbids_retval_s {
 	} else if (UNLIKELY(ta->nannos > rz)) {
 		/* scale to number of annos */
 		size_t nuz = (ta->nannos + TBIDS_EXTRA + 4095U) & ~4095U;
-		rv = realloc(rv, nuz * sizeof(*rv->bids));
+
+		rv = recalloc(rv, rz + TBIDS_EXTRA, nuz, sizeof(*rv->bids));
 		rz = nuz - TBIDS_EXTRA;
 	}
 
@@ -300,6 +309,7 @@ static const struct co_tbids_retval_s {
 
 		rv->bids[i] = finner_bid(tp, tz);
 	}
+	rv->nbids = ta->nannos;
 	return rv;
 }
 
@@ -323,28 +333,33 @@ co_textr(const struct co_terms_retval_s *ta, const struct co_tbids_retval_s *tb)
 static void
 co_tanno(const struct co_terms_retval_s *ta, const struct co_tbids_retval_s *tb)
 {
-	const char *tp;
-	size_t tz;
-
-	/* the prefix*/
-	tp = ta->base + ta->bbox.sta;
-	tz = (ta->nannos ? ta->annos[0U].sta : ta->bbox.end) - ta->bbox.sta;
-	fwrite(tp, sizeof(*tp), tz, stdout);
+	/* check output device */
+	const int colourp = isatty(STDOUT_FILENO);
+	size_t last = 0U;
 
 	for (size_t i = 0U; i < ta->nannos; i++) {
-		tp = ta->base + ta->annos[i].sta;
-		tz = ta->annos[i].end - ta->annos[i].sta;
+		/* only annotate actual tokens */
+		if (tb->bids[i].bid) {
+			/* print from last streak to here */
+			const size_t this = ta->annos[i].sta;
+			const size_t llen = this - last;
+			const size_t tlen = ta->annos[i].end - this;
+			const fn_tok_t t = tb->bids[i].bid;
 
-		fputc('|', stdout);
-		fwrite(tp, sizeof(*tp), tz, stdout);
+			fwrite(ta->base + last, sizeof(char), llen, stdout);
 
-		tp = ta->base + ta->annos[i].end;
-		tz = (i + 1U < ta->nannos
-		      ? ta->annos[i + 1U].sta : ta->bbox.end)
-			- ta->annos[i].end;
-		fputc('|', stdout);
-		fwrite(tp, sizeof(*tp), tz, stdout);
+			colourp && fputs("\x1b[1m", stdout);
+			fwrite(ta->base + this, sizeof(char), tlen, stdout);
+			colourp && fputs("\x1b[0;2m", stdout);
+			fputc('/', stdout);
+			fputs(finner_bidstr[t], stdout);
+			colourp && fputs("\x1b[0m", stdout);
+
+			last = ta->annos[i].end;
+		}
 	}
+	/* write portion between last and ta->bbox.end */
+	fwrite(ta->base + last, sizeof(char), ta->bbox.end - last, stdout);
 	return;
 }
 
