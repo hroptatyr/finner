@@ -59,30 +59,24 @@ const char *const finner_bidstr[FINNER_NTOKENS] = {
 
 
 /* public api */
-finner_token_t
+fn_bid_t
 finner_bid(const char *str, size_t len)
 {
-	finner_token_t winner = FINNER_TERM;
-	nmck_bid_t best = {0U};
-
-#define CHECK(token, bidder)				\
-	with (nmck_bid_t x = bidder(str, len)) {	\
-		if (x.bid > 127U) {			\
-			return token;			\
-		} else if (x.bid > best.bid) {		\
-			winner = token;			\
-			best = x;			\
+#define CHECK(bidder)				\
+	with (fn_bid_t x = bidder(str, len)) {		\
+		if (x.bid) {				\
+			return x;			\
 		}					\
 	}
 
 	/* start the bidding */
-	CHECK(FINNER_FIGI, nmck_figi_bid);
-	CHECK(FINNER_ISIN, nmck_isin_bid);
-	CHECK(FINNER_CUSIP, nmck_cusip_bid);
-	CHECK(FINNER_SEDOL, nmck_sedol_bid);
-	CHECK(FINNER_CCY, nmck_ccy_bid);
-	CHECK(FINNER_AMT, nmck_amt_bid);
-	return winner;
+	CHECK(fn_figi_bid);
+	CHECK(fn_isin_bid);
+	CHECK(fn_cusip_bid);
+	CHECK(fn_sedol_bid);
+	CHECK(fn_ccy_bid);
+	CHECK(fn_amt_bid);
+	return fn_nul_bid;
 }
 
 /* bidder.c ends here */

@@ -41,25 +41,23 @@
 #include "nifty.h"
 #include "ccy.h"
 
-static const nmck_bid_t nul_bid;
-
 /* allowed isin country codes */
 #include "ccy-cc.c"
 
 
 /* class implementation */
-nmck_bid_t
-nmck_ccy_bid(const char *str, size_t len)
+fn_bid_t
+fn_ccy_bid(const char *str, size_t len)
 {
 	/* common cases first */
 	if (len != 3U) {
-		return nul_bid;
+		return fn_nul_bid;
 	} else if (!valid_cc_p(str)) {
-		return nul_bid;
+		return fn_nul_bid;
 	}
 
 	/* bid just any number really */
-	return (nmck_bid_t){63U};
+	return (fn_bid_t){FINNER_CCY};
 }
 
 /* ccy.c ends here */

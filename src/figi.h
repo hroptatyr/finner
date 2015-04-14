@@ -39,6 +39,6 @@
 
 #include "bidder.h"
 
-extern nmck_bid_t nmck_figi_bid(const char *str, size_t len);
+extern fn_bid_t fn_figi_bid(const char *str, size_t len);
 
 #endif	/* INCLUDED_figi_h_ */

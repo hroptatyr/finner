@@ -41,8 +41,6 @@
 #include "nifty.h"
 #include "sedol.h"
 
-static const nmck_bid_t nul_bid;
-
 static char
 calc_chk(const char *str, size_t UNUSED(len))
 {
@@ -74,23 +72,23 @@ calc_chk(const char *str, size_t UNUSED(len))
 
 
 /* class implementation */
-nmck_bid_t
-nmck_sedol_bid(const char *str, size_t len)
+fn_bid_t
+fn_sedol_bid(const char *str, size_t len)
 {
 	/* common cases first */
 	if (len != 7U) {
-		return nul_bid;
+		return fn_nul_bid;
 	}
 
 	with (char chk = calc_chk(str, len)) {
 		if (!chk) {
-			return nul_bid;
+			return fn_nul_bid;
 		} else if (chk != str[6U]) {
-			return nul_bid;
+			return fn_nul_bid;
 		}
 	}
 	/* bid just any number really */
-	return (nmck_bid_t){63U};
+	return (fn_bid_t){FINNER_SEDOL};
 }
 
 /* sedol.c ends here */

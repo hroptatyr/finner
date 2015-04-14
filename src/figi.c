@@ -41,8 +41,6 @@
 #include "nifty.h"
 #include "figi.h"
 
-static const nmck_bid_t nul_bid;
-
 static char
 calc_chk(const char *str, size_t UNUSED(len))
 {
@@ -99,26 +97,26 @@ calc_chk(const char *str, size_t UNUSED(len))
 
 
 /* class implementation */
-nmck_bid_t
-nmck_figi_bid(const char *str, size_t len)
+fn_bid_t
+fn_figi_bid(const char *str, size_t len)
 {
 	/* common cases first */
 	if (len != 12U) {
-		return nul_bid;
+		return fn_nul_bid;
 	} else if (str[0U] != 'B' || str[1U] != 'B' || str[2U] != 'G') {
 		/* currently only BB is registered as certified provider */
-		return nul_bid;
+		return fn_nul_bid;
 	}
 
 	with (char chk = calc_chk(str, len)) {
 		if (!chk) {
-			return nul_bid;
+			return fn_nul_bid;
 		} else if (chk != str[11U]) {
-			return nul_bid;
+			return fn_nul_bid;
 		}
 	}
 	/* bid high */
-	return (nmck_bid_t){255U};
+	return (fn_bid_t){FINNER_FIGI};
 }
 
 /* figi.c ends here */

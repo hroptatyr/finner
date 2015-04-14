@@ -39,6 +39,6 @@
 
 #include "bidder.h"
 
-extern nmck_bid_t nmck_sedol_bid(const char *str, size_t len);
+extern fn_bid_t fn_sedol_bid(const char *str, size_t len);
 
 #endif	/* INCLUDED_sedol_h_ */
