@@ -189,6 +189,12 @@ static const struct co_terms_retval_s {
 			cl = CLS_UNK;
 		} else if (*bp <= 0x20) {
 			cl = CLS_SPACE;
+		} else if (*bp <= 0x22) {
+			cl = CLS_PUNCT;
+		} else if (*bp <= 0x26) {
+			cl = CLS_ALNUM;
+		} else if (*bp == '+') {
+			cl = CLS_ALNUM;
 		} else if (*bp < 0x30) {
 			cl = CLS_PUNCT;
 		} else if (*bp < 0x3a) {
