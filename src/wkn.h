@@ -1,4 +1,4 @@
-/*** bidder.c -- determine token types
+/*** wkn.h -- checker for WKNs, very high in false positive
  *
  * Copyright (C) 2014-2015 Sebastian Freundt
  *
@@ -34,56 +34,11 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  ***/
-#if defined HAVE_CONFIG_H
-# include "config.h"
-#endif	/* HAVE_CONFIG_H */
+#if !defined INCLUDED_wkn_h_
+#define INCLUDED_wkn_h_
+
 #include "bidder.h"
-#include "nifty.h"
-/* bidders */
-#include "figi.h"
-#include "isin.h"
-#include "cusip.h"
-#include "sedol.h"
-#include "ccy.h"
-#include "fxpair.h"
-#include "amt.h"
-#include "wkn.h"
 
-const char *const finner_bidstr[FINNER_NTOKENS] = {
-	[FINNER_TERM] = "term",
-	[FINNER_FIGI] = "figi",
-	[FINNER_ISIN] = "isin",
-	[FINNER_CUSIP] = "cusip",
-	[FINNER_SEDOL] = "sedol",
-	[FINNER_CCY] = "ccy",
-	[FINNER_FXPAIR] = "fxpair",
-	[FINNER_AMT] = "amt",
-	[FINNER_WKN] = "wkn",
-};
+extern fn_bid_t fn_wkn_bid(const char *str, size_t len);
 
-
-/* public api */
-fn_bid_t
-finner_bid(const char *str, size_t len)
-{
-#define CHECK(bidder)				\
-	with (fn_bid_t x = bidder(str, len)) {		\
-		if (x.bid) {				\
-			return x;			\
-		}					\
-	}
-
-	/* start the bidding */
-	CHECK(fn_figi_bid);
-	CHECK(fn_isin_bid);
-	CHECK(fn_cusip_bid);
-	CHECK(fn_sedol_bid);
-	CHECK(fn_ccy_bid);
-	CHECK(fn_fxpair_bid);
-	CHECK(fn_amt_bid);
-	/* high risk stuff last */
-	CHECK(fn_wkn_bid);
-	return fn_nul_bid;
-}
-
-/* bidder.c ends here */
+#endif	/* INCLUDED_wkn_h_ */

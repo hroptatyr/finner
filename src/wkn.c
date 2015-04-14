@@ -1,4 +1,4 @@
-/*** bidder.c -- determine token types
+/*** wkn.c -- checker for WKNs, very high in false positives
  *
  * Copyright (C) 2014-2015 Sebastian Freundt
  *
@@ -34,56 +34,40 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  ***/
-#if defined HAVE_CONFIG_H
-# include "config.h"
-#endif	/* HAVE_CONFIG_H */
-#include "bidder.h"
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <assert.h>
 #include "nifty.h"
-/* bidders */
-#include "figi.h"
-#include "isin.h"
-#include "cusip.h"
-#include "sedol.h"
-#include "ccy.h"
-#include "fxpair.h"
-#include "amt.h"
 #include "wkn.h"
 
-const char *const finner_bidstr[FINNER_NTOKENS] = {
-	[FINNER_TERM] = "term",
-	[FINNER_FIGI] = "figi",
-	[FINNER_ISIN] = "isin",
-	[FINNER_CUSIP] = "cusip",
-	[FINNER_SEDOL] = "sedol",
-	[FINNER_CCY] = "ccy",
-	[FINNER_FXPAIR] = "fxpair",
-	[FINNER_AMT] = "amt",
-	[FINNER_WKN] = "wkn",
-};
-
 
-/* public api */
+/* class implementation */
 fn_bid_t
-finner_bid(const char *str, size_t len)
+fn_wkn_bid(const char *str, size_t len)
 {
-#define CHECK(bidder)				\
-	with (fn_bid_t x = bidder(str, len)) {		\
-		if (x.bid) {				\
-			return x;			\
-		}					\
+	size_t ndigits = 0U;
+
+	if (len != 6U) {
+		return fn_nul_bid;
+	}
+	/* we need at least one digit */
+	for (size_t i = 0U; i < 6U; i++) {
+		if ((unsigned char)(str[i] ^ '0') < 10U) {
+			ndigits++;
+		} else if (str[i] < 'A') {
+			return fn_nul_bid;
+		} else if (str[i] > 'Z') {
+			return fn_nul_bid;
+		}
+	}
+	if (!ndigits) {
+		return fn_nul_bid;
 	}
 
-	/* start the bidding */
-	CHECK(fn_figi_bid);
-	CHECK(fn_isin_bid);
-	CHECK(fn_cusip_bid);
-	CHECK(fn_sedol_bid);
-	CHECK(fn_ccy_bid);
-	CHECK(fn_fxpair_bid);
-	CHECK(fn_amt_bid);
-	/* high risk stuff last */
-	CHECK(fn_wkn_bid);
-	return fn_nul_bid;
+	/* bid bid bid */
+	return (fn_bid_t){FINNER_WKN};
 }
 
-/* bidder.c ends here */
+/* wkn.c ends here */
