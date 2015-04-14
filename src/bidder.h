@@ -48,6 +48,7 @@ typedef enum {
 	FINNER_CCY,
 	FINNER_FXPAIR,
 	FINNER_AMT,
+	FINNER_WKN,
 	FINNER_NTOKENS
 } fn_tok_t;
 

@@ -36,6 +36,7 @@ libbidder_la_SOURCES += fxpair.c fxpair.h
 EXTRA_libbidder_la_SOURCES += fxpair-cc.ccl
 BUILT_SOURCES += fxpair-cc.c
 libbidder_la_SOURCES += amt.c amt.h
+libbidder_la_SOURCES += wkn.c wkn.h
 
 bin_PROGRAMS += finner
 finner_SOURCES = finner.c finner.yuck
