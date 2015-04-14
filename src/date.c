@@ -1,4 +1,4 @@
-/*** bidder.c -- determine token types
+/*** date.c -- checker for dates
  *
  * Copyright (C) 2014-2015 Sebastian Freundt
  *
@@ -34,59 +34,85 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  ***/
-#if defined HAVE_CONFIG_H
-# include "config.h"
-#endif	/* HAVE_CONFIG_H */
-#include "bidder.h"
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <assert.h>
 #include "nifty.h"
-/* bidders */
-#include "figi.h"
-#include "isin.h"
-#include "cusip.h"
-#include "sedol.h"
-#include "ccy.h"
-#include "fxpair.h"
-#include "amt.h"
-#include "wkn.h"
 #include "date.h"
 
-const char *const finner_bidstr[FINNER_NTOKENS] = {
-	[FINNER_TERM] = "term",
-	[FINNER_FIGI] = "figi",
-	[FINNER_ISIN] = "isin",
-	[FINNER_CUSIP] = "cusip",
-	[FINNER_SEDOL] = "sedol",
-	[FINNER_CCY] = "ccy",
-	[FINNER_FXPAIR] = "fxpair",
-	[FINNER_AMT] = "amt",
-	[FINNER_WKN] = "wkn",
-	[FINNER_DATE] = "date",
-};
+#define DIGITP(x)	(((unsigned char)((x) ^ '0')) < 10U)
 
 
-/* public api */
+/* class implementation */
 fn_bid_t
-finner_bid(const char *str, size_t len)
+fn_date_bid(const char *str, size_t len)
 {
-#define CHECK(bidder)				\
-	with (fn_bid_t x = bidder(str, len)) {		\
-		if (x.bid) {				\
-			return x;			\
-		}					\
+	char sep = '\0';
+
+	/* at least 2 digits we want */
+	if (!(len == 8U || len == 10U)) {
+		return fn_nul_bid;
+	} else if (!DIGITP(str[0U]) || !DIGITP(str[1U])) {
+		return fn_nul_bid;
+	}
+	if (DIGITP(str[2U])) {
+		/* could be YYYY-MM-DD */
+		if (!DIGITP(str[3U])) {
+			return fn_nul_bid;
+		}
+		if (DIGITP(str[4U])) {
+			/* must be YYYYMMDD */
+			if (!DIGITP(str[5U]) ||
+			    !DIGITP(str[6U]) ||
+			    !DIGITP(str[7U])) {
+				/* apparently not */
+				return fn_nul_bid;
+			} else if (len != 8U) {
+				return fn_nul_bid;
+			}
+		} else {
+			switch (str[4U]) {
+			case '/':
+			case '-':
+				if (len == 10U) {
+					sep = str[4U];
+					break;
+				}
+			default:
+				return fn_nul_bid;
+			}
+			if (!DIGITP(str[5U]) || !DIGITP(str[6U])) {
+				return fn_nul_bid;
+			} else if (str[7U] != sep) {
+				return fn_nul_bid;
+			} else if (!DIGITP(str[8U]) || !DIGITP(str[9U])) {
+				return fn_nul_bid;
+			}
+		}
+	} else {
+		switch (str[2U]) {
+		case '.':
+		case '/':
+			if (len == 10U) {
+				sep = str[2U];
+				break;
+			}
+		default:
+			return fn_nul_bid;
+		}
+		if (!DIGITP(str[3U]) || !DIGITP(str[4U])) {
+			return fn_nul_bid;
+		} else if (str[5U] != sep) {
+			return fn_nul_bid;
+		} else if (!DIGITP(str[6U]) || !DIGITP(str[7U]) ||
+			   !DIGITP(str[8U]) || !DIGITP(str[9U])) {
+			return fn_nul_bid;
+		}
 	}
 
-	/* start the bidding */
-	CHECK(fn_figi_bid);
-	CHECK(fn_isin_bid);
-	CHECK(fn_cusip_bid);
-	CHECK(fn_sedol_bid);
-	CHECK(fn_ccy_bid);
-	CHECK(fn_fxpair_bid);
-	CHECK(fn_amt_bid);
-	CHECK(fn_date_bid);
-	/* high risk stuff last */
-	CHECK(fn_wkn_bid);
-	return fn_nul_bid;
+	/* bid just any number really */
+	return (fn_bid_t){FINNER_DATE};
 }
 
-/* bidder.c ends here */
+/* date.c ends here */
