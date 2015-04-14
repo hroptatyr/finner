@@ -48,6 +48,7 @@
 #include "fxpair.h"
 #include "amt.h"
 #include "wkn.h"
+#include "date.h"
 
 const char *const finner_bidstr[FINNER_NTOKENS] = {
 	[FINNER_TERM] = "term",
@@ -59,6 +60,7 @@ const char *const finner_bidstr[FINNER_NTOKENS] = {
 	[FINNER_FXPAIR] = "fxpair",
 	[FINNER_AMT] = "amt",
 	[FINNER_WKN] = "wkn",
+	[FINNER_DATE] = "date",
 };
 
 
@@ -81,6 +83,7 @@ finner_bid(const char *str, size_t len)
 	CHECK(fn_ccy_bid);
 	CHECK(fn_fxpair_bid);
 	CHECK(fn_amt_bid);
+	CHECK(fn_date_bid);
 	/* high risk stuff last */
 	CHECK(fn_wkn_bid);
 	return fn_nul_bid;
