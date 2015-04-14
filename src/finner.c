@@ -309,6 +309,7 @@ static const struct co_tbids_retval_s {
 
 		rv->bids[i] = finner_bid(tp, tz);
 	}
+	rv->nbids = ta->nannos;
 	return rv;
 }
 
