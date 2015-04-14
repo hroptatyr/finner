@@ -68,7 +68,7 @@
 #include <string.h>
 
 struct cclen_s {
-	char cc[2U];
+	char cc[4U];
 	uint_fast8_t len;
 };
 
@@ -112,6 +112,8 @@ fatal: insufficient memory to compile the input\n", stderr);
 	/* otherwise add */
 	lst[i].cc[0U] = ln[0U];
 	lst[i].cc[1U] = ln[1U];
+	lst[i].cc[2U] = ln[2U] >= 'A' ? ln[2U] : '\0';
+	lst[i].cc[3U] = ln[2U] >= 'A' && ln[3U] >= 'A' ? ln[3U] : '\0';
 	lst[i].len = (uint_fast8_t)l;
 	lnt++;
 	return 1;
@@ -141,20 +143,34 @@ getline() or fgetln() support missing.\n", stderr);
 
 	puts("\
 #include <stdbool.h>\n\
-#include <stdint.h>\n\
-\n\
+#include <stdint.h>\n");
+
+	if (lnt && lst->cc[2U] >= 'A' && lst->cc[2U] <= 'Z') {
+		/* three letter codes, we need popcnt */
+		puts("\
+static unsigned int\n\
+xpopcnt(uint_fast32_t x)\n\
+{\n\
+	x = x - ((x >> 1U) & 0x55555555U);\n\
+	x = (x & 0x33333333U) + ((x >> 2U) & 0x33333333U);\n\
+	x = ((x + (x >> 4U) & 0xF0F0F0FU) * 0x1010101U) >> 24U;\n\
+	return x & 0x1fU;\n\
+}\n");
+	}
+
+	puts("\
 static bool\n\
 valid_cc_p(const char cc[static 2U])\n\
 {\n\
 #define C2I(x)			((x) - 'A')\n\
-#define BEGINNING_WITH(x)	[C2I(x)] =\n\
+#define BEGINNING_WITH(x)	[C2I(x)]\n\
 #define ALLOW(x)		(1U << C2I(x))\n\
 #define AND			|\n\
 	static const uint_fast32_t _cc[] = {");
 
 	for (char c = 'A'; c <= 'Z'; c++) {
 		printf("\
-		BEGINNING_WITH('%c')\t", c);
+		BEGINNING_WITH('%c') = ", c);
 		for (size_t i = 0U; i < lnt; i++) {
 			if (lst[i].cc[0U] == c) {
 				printf("ALLOW('%c') AND ", lst[i].cc[1U]);
@@ -163,12 +179,45 @@ valid_cc_p(const char cc[static 2U])\n\
 		puts("0U,");
 	}
 	puts("\
-	};\n\
+	};");
+	if (lnt && lst->cc[2U] >= 'A' && lst->cc[2U] <= 'Z') {
+		/* three letter codes */
+		puts("\
+	static const struct {\n\
+		char _c[16U];\n\
+	} _c3[] = {");
+		for (char c = 'A'; c <= 'Z'; c++) {
+			printf("\
+		BEGINNING_WITH('%c') = {\"", c);
+			for (size_t i = 0U; i < lnt; i++) {
+				if (lst[i].cc[0U] == c) {
+					printf("%c", lst[i].cc[2U]);
+				}
+			}
+			puts("\"},");
+		}
+		puts("\
+	};");
+		puts("\
 \n\
 	if (cc[0U] >= 'A' && cc[0U] <= 'Z' &&\n\
 	    cc[1U] >= 'A' && cc[1U] <= 'Z') {\n\
-		return (_cc[C2I(cc[0U])] & ALLOW(cc[1U]));\n\
-	}\n\
+		uint_fast32_t v = _cc BEGINNING_WITH(cc[0U]);\n\
+		if (v & ALLOW(cc[1U])) {\n\
+			uint_fast32_t m = v & (ALLOW(cc[1U]) - 1U);\n\
+			unsigned int pc = xpopcnt(m);\n\
+			return cc[2U] == _c3 BEGINNING_WITH(cc[0U])._c[pc];\n\
+		}\n\
+	}");
+	} else {
+		puts("\
+\n\
+	if (cc[0U] >= 'A' && cc[0U] <= 'Z' &&\n\
+	    cc[1U] >= 'A' && cc[1U] <= 'Z') {\n\
+		return (_cc BEGINNING_WITH(cc[0U]) & ALLOW(cc[1U]));\n\
+	}");
+	}
+	puts("\
 	return false;\n\
 #undef C2I\n\
 #undef BEGINNING_WITH\n\
