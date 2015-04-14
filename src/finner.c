@@ -333,6 +333,8 @@ co_textr(const struct co_terms_retval_s *ta, const struct co_tbids_retval_s *tb)
 static void
 co_tanno(const struct co_terms_retval_s *ta, const struct co_tbids_retval_s *tb)
 {
+	/* check output device */
+	const int colourp = isatty(STDOUT_FILENO);
 	size_t last = 0U;
 
 	for (size_t i = 0U; i < ta->nannos; i++) {
@@ -346,11 +348,12 @@ co_tanno(const struct co_terms_retval_s *ta, const struct co_tbids_retval_s *tb)
 
 			fwrite(ta->base + last, sizeof(char), llen, stdout);
 
-			fputs("\x1b[1m", stdout);
+			colourp && fputs("\x1b[1m", stdout);
 			fwrite(ta->base + this, sizeof(char), tlen, stdout);
-			fputs("\x1b[0;2m/", stdout);
+			colourp && fputs("\x1b[0;2m", stdout);
+			fputc('/', stdout);
 			fputs(finner_bidstr[t], stdout);
-			fputs("\x1b[0m", stdout);
+			colourp && fputs("\x1b[0m", stdout);
 
 			last = ta->annos[i].end;
 		}
