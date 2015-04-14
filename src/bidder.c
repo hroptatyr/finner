@@ -48,7 +48,7 @@
 #include "amt.h"
 
 const char *const finner_bidstr[FINNER_NTOKENS] = {
-	[FINNER_TOKEN] = "term",
+	[FINNER_TERM] = "term",
 	[FINNER_FIGI] = "figi",
 	[FINNER_ISIN] = "isin",
 	[FINNER_CUSIP] = "cusip",
@@ -62,7 +62,7 @@ const char *const finner_bidstr[FINNER_NTOKENS] = {
 finner_token_t
 finner_bid(const char *str, size_t len)
 {
-	finner_token_t winner = FINNER_TOKEN;
+	finner_token_t winner = FINNER_TERM;
 	nmck_bid_t best = {0U};
 
 #define CHECK(token, bidder)				\

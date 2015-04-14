@@ -40,7 +40,7 @@
 #include <stddef.h>
 
 typedef enum {
-	FINNER_TOKEN,
+	FINNER_TERM,
 	FINNER_FIGI,
 	FINNER_ISIN,
 	FINNER_CUSIP,
