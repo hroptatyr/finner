@@ -37,11 +37,56 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <assert.h>
 #include "nifty.h"
 #include "date.h"
 
 #define DIGITP(x)	(((unsigned char)((x) ^ '0')) < 10U)
+
+static bool
+check_y(const char s[static 4U])
+{
+/* just accept 19xx and 20xx dates */
+	switch (s[0U]) {
+	case '1':
+		return s[1U] == '9';
+	case '2':
+		return s[1U] == '0';
+	default:
+		break;
+	}
+	return false;
+}
+
+static bool
+check_m(const char s[static 4U])
+{
+	switch (s[0U]) {
+	case '0':
+		return (unsigned int)(s[1U] ^ '0') > 0U;
+	case '1':
+		return (unsigned int)(s[1U] ^ '0') <= 2U;
+	default:
+		break;
+	}
+	return false;
+}
+
+static bool
+check_d(const char s[static 4U])
+{
+	switch (s[0U]) {
+	case '0':
+		return (unsigned int)(s[1U] ^ '0') > 0U;
+	case '1':
+	case '2':
+		return true;
+	case '3':
+		return (unsigned int)(s[1U] ^ '0') <= 1U;
+	}
+	return false;
+}
 
 
 /* class implementation */
@@ -70,6 +115,12 @@ fn_date_bid(const char *str, size_t len)
 				return fn_nul_bid;
 			} else if (len != 8U) {
 				return fn_nul_bid;
+			} else if (!check_y(str + 0U)) {
+				return fn_nul_bid;
+			} else if (!check_m(str + 4U)) {
+				return fn_nul_bid;
+			} else if (!check_d(str + 6U)) {
+				return fn_nul_bid;
 			}
 		} else {
 			switch (str[4U]) {
@@ -87,6 +138,12 @@ fn_date_bid(const char *str, size_t len)
 			} else if (str[7U] != sep) {
 				return fn_nul_bid;
 			} else if (!DIGITP(str[8U]) || !DIGITP(str[9U])) {
+				return fn_nul_bid;
+			} else if (!check_y(str + 0U)) {
+				return fn_nul_bid;
+			} else if (!check_m(str + 5U)) {
+				return fn_nul_bid;
+			} else if (!check_d(str + 8U)) {
 				return fn_nul_bid;
 			}
 		}
@@ -107,6 +164,12 @@ fn_date_bid(const char *str, size_t len)
 			return fn_nul_bid;
 		} else if (!DIGITP(str[6U]) || !DIGITP(str[7U]) ||
 			   !DIGITP(str[8U]) || !DIGITP(str[9U])) {
+			return fn_nul_bid;
+		} else if (!check_y(str + 6U)) {
+			return fn_nul_bid;
+		} else if (!check_m(str + 0U) && !check_d(str + 3U)) {
+			return fn_nul_bid;
+		} else if (!check_d(str + 0U) || !check_d(str + 3U)) {
 			return fn_nul_bid;
 		}
 	}
