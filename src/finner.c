@@ -284,7 +284,16 @@ static const struct co_terms_retval_s {
 	return rv;
 }
 
-/* bidders or higher level stuff that takes a terms retval */
+/* bidders or higher level stuff that takes a terms retval
+ *
+ * We store the bids as they come in, so the resulting BIDS array
+ * coincides with the terms retval array TA->ANNOS.
+ *
+ * Terms for which a bidder returned FINNER_TERM (or FINNER_CUT)
+ * with a STATE != 0 are cut in halves at STATE bytes.  The STATE
+ * slot is then reused to point to the index of the newly created
+ * half-term (behind anything in TA->ANNOS).  The second half is
+ * stored in the slot behind it. */
 static const struct co_tbids_retval_s {
 	size_t nbids;
 	fn_bid_t bids[];

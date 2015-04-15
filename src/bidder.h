@@ -54,12 +54,17 @@ typedef enum {
 } fn_tok_t;
 
 /**
- * We'll do anonymous bidding.  Every registered checker is asked in
- * turns to submit a tender.  The highest BID value will win.
- * The STATE value can be used by the bidder to record some state.
+ * We'll do anonymous bidding.  Registered bidders are asked in
+ * sequence to submit a tender.  The first bidder with a bid different
+ * from FINNER_TERM will seal the deal.
  *
- * For further optimisation, any bid >= 128U will end the bidding
- * process immediately. */
+ * The STATE value can be used by the bidder to record some state.
+ * Refer to the documentation of the bidder in question to find out
+ * about STATE.
+ *
+ * If FINNER_TERM (or FINNER_CUT) is returned with a STATE != 0, the
+ * term is cut in halves.  The first STATE bytes are then passed to the
+ * bidder followed by the rest. */
 typedef struct {
 	fn_tok_t bid;
 	unsigned int state;
