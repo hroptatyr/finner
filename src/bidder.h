@@ -75,6 +75,9 @@ typedef struct {
 	uintptr_t state;
 } fn_bid_t;
 
+_Static_assert(
+	sizeof(fn_bid_t) == 2U * sizeof(uintptr_t),
+	"possible size problem with fn_bid_t");
 #define fn_nul_bid	((fn_bid_t){FINNER_TERM})
 
 /**
