@@ -50,14 +50,16 @@ fn_bid_t
 fn_ccy_bid(const char *str, size_t len)
 {
 	/* common cases first */
-	if (len != 3U) {
+	if (len < 3U) {
 		return fn_nul_bid;
 	} else if (!valid_cc_p(str)) {
+		return fn_nul_bid;
+	} else if (len > 3U && ((unsigned char)(str[3U] ^ '0')) >= 10U) {
 		return fn_nul_bid;
 	}
 
 	/* bid just any number really */
-	return (fn_bid_t){FINNER_CCY};
+	return (fn_bid_t){FINNER_CCY, len - 3U};
 }
 
 /* ccy.c ends here */
