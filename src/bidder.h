@@ -38,6 +38,7 @@
 #define INCLUDED_bidder_h_
 
 #include <stddef.h>
+#include <stdint.h>
 
 typedef enum {
 	FINNER_TERM,
@@ -58,16 +59,20 @@ typedef enum {
  * sequence to submit a tender.  The first bidder with a bid different
  * from FINNER_TERM will seal the deal.
  *
+ * Optionally, the bidder can submit a tender for only a *prefix* of the
+ * term string in question.  In that case LEFTOVER must be the number
+ * of bytes the bidder chose to ignore.  Internally, this will result
+ * in the term being cut in two halves, the prefix one with a bid, and
+ * a new term constructed from the left-overs that is subject to bidding
+ * in the next round.
+ *
  * The STATE value can be used by the bidder to record some state.
  * Refer to the documentation of the bidder in question to find out
- * about STATE.
- *
- * If FINNER_TERM (or FINNER_CUT) is returned with a STATE != 0, the
- * term is cut in halves.  The first STATE bytes are then passed to the
- * bidder followed by the rest. */
+ * about STATE. */
 typedef struct {
 	fn_tok_t bid;
-	unsigned int state;
+	unsigned int leftover;
+	uintptr_t state;
 } fn_bid_t;
 
 #define fn_nul_bid	((fn_bid_t){FINNER_TERM})
