@@ -284,15 +284,33 @@ static const struct co_terms_retval_s {
 	return rv;
 }
 
-/* bidders or higher level stuff that takes a terms retval */
+/* bidders or higher level stuff that takes a terms retval
+ *
+ * We store the bids as they come in, so the resulting BIDS array
+ * coincides with the terms retval array TA->ANNOS.
+ *
+ * Terms for which a bidder returned FINNER_TERM (or FINNER_CUT)
+ * with a STATE != 0 are cut in halves at STATE bytes.  The STATE
+ * slot is then reused to point to the index of the newly created
+ * half-term (behind anything in TA->ANNOS).  The second half is
+ * stored in the slot behind it. */
 static const struct co_tbids_retval_s {
-	size_t nbids;
+	union {
+		fn_bid_t extra;
+		struct {
+			size_t nbids;
+			size_t ncuts;
+		};
+	};
 	fn_bid_t bids[];
 } *co_tbids(const struct co_terms_retval_s *ta)
 {
 	static struct co_tbids_retval_s *rv;
 	static size_t rz;
 #define TBIDS_EXTRA	(sizeof(*rv) / sizeof(*rv->bids))
+#define ROUNDTO(x, n)	(((x) + ((n) - 1U)) & ~(size_t)((n) - 1U))
+	size_t nb;
+	size_t nc;
 
 	if (UNLIKELY(rv == NULL && ta == NULL)) {
 		/* just return */
@@ -303,19 +321,59 @@ static const struct co_tbids_retval_s {
 		return NULL;
 	} else if (UNLIKELY(ta->nannos > rz)) {
 		/* scale to number of annos */
-		size_t nuz = (ta->nannos + TBIDS_EXTRA + 4095U) & ~4095U;
+		size_t nuz = ROUNDTO(ta->nannos + TBIDS_EXTRA, 4096U);
 
 		rv = recalloc(rv, rz + TBIDS_EXTRA, nuz, sizeof(*rv->bids));
 		rz = nuz - TBIDS_EXTRA;
 	}
 
+	/* preset NB to have a basis for cuts */
+	nb = nc = 0U;
 	for (size_t i = 0U; i < ta->nannos; i++) {
 		const char *tp = ta->base + ta->annos[i].sta;
-		const size_t tz = ta->annos[i].end - ta->annos[i].sta;
+		size_t tz = ta->annos[i].end - ta->annos[i].sta;
+		fn_bid_t b;
 
-		rv->bids[i] = finner_bid(tp, tz);
+	rebid:
+		/* resize? */
+		if (nb > rz) {
+			size_t nuz = ROUNDTO(rz + TBIDS_EXTRA, 4096U);
+
+			rv = recalloc(rv, rz + TBIDS_EXTRA,
+				      nuz, sizeof(*rv->bids));
+			rz = nuz - TBIDS_EXTRA;
+		}
+
+		/* get ourselves some bids */
+		b = finner_bid(tp, tz);
+
+		/* sanitise and maybe cut the whole thing */
+		if (!b.bid) {
+			if (UNLIKELY(b.leftover || b.state)) {
+				/* that's rubbish */
+				b = fn_nul_bid;
+			}
+		} else if (b.leftover) {
+			const size_t cz = b.leftover;
+
+			if (LIKELY(cz < tz)) {
+				/* cut! put this bid into half-term 1 */
+				rv->bids[nb++] = b;
+				/* massage pointers for the other half */
+				tp += tz - cz;
+				tz = cz;
+				goto rebid;
+			} else {
+				/* otherwise it's rubbish again */
+				b = fn_nul_bid;
+			}
+		}
+
+		/* assign and move on */
+		rv->bids[nb++] = b;
 	}
-	rv->nbids = ta->nannos;
+	/* make rv->bids coincide with ta->annos */
+	rv->nbids = nb;
 	return rv;
 }
 
@@ -323,15 +381,20 @@ static const struct co_tbids_retval_s {
 static void
 co_textr(const struct co_terms_retval_s *ta, const struct co_tbids_retval_s *tb)
 {
-	for (size_t i = 0U; i < ta->nannos; i++) {
-		const char *tp = ta->base + ta->annos[i].sta;
-		const size_t tz = ta->annos[i].end - ta->annos[i].sta;
-		const fn_tok_t t = tb->bids[i].bid;
+	for (size_t i = 0U, j = 0U; i < ta->nannos; i++) {
+		struct anno_s a = ta->annos[i];
+		fn_bid_t b;
 
-		fwrite(tp, sizeof(*tp), tz, stdout);
-		fprintf(stdout, "\t%s\t[%zu,%zu]\n",
-			finner_bidstr[t],
-			ta->annos[i].sta, ta->annos[i].end);
+		do {
+			const char *tp = ta->base + a.sta;
+			const size_t tz = a.end - a.sta;
+
+			b = tb->bids[j++];
+			fwrite(tp, sizeof(*tp), tz - b.leftover, stdout);
+			fprintf(stdout, "\t%s\t[%zu,%zu)\n",
+				finner_bidstr[b.bid],
+				a.sta, a.end - b.leftover);
+		} while ((a.sta = a.end - b.leftover) < a.end);
 	}
 	return;
 }
@@ -343,14 +406,17 @@ co_tanno(const struct co_terms_retval_s *ta, const struct co_tbids_retval_s *tb)
 	const int colourp = isatty(STDOUT_FILENO);
 	size_t last = 0U;
 
-	for (size_t i = 0U; i < ta->nannos; i++) {
+	for (size_t i = 0U, j = 0U; i < ta->nannos; i++) {
+		struct anno_s a = ta->annos[i];
+		fn_bid_t b;
+
+	redo:
 		/* only annotate actual tokens */
-		if (tb->bids[i].bid) {
+		if ((b = tb->bids[j++]).bid) {
 			/* print from last streak to here */
-			const size_t this = ta->annos[i].sta;
+			const size_t this = a.sta;
 			const size_t llen = this - last;
-			const size_t tlen = ta->annos[i].end - this;
-			const fn_tok_t t = tb->bids[i].bid;
+			const size_t tlen = a.end - this - b.leftover;
 
 			fwrite(ta->base + last, sizeof(char), llen, stdout);
 
@@ -358,10 +424,12 @@ co_tanno(const struct co_terms_retval_s *ta, const struct co_tbids_retval_s *tb)
 			fwrite(ta->base + this, sizeof(char), tlen, stdout);
 			colourp && fputs("\x1b[0;2m", stdout);
 			fputc('/', stdout);
-			fputs(finner_bidstr[t], stdout);
+			fputs(finner_bidstr[b.bid], stdout);
 			colourp && fputs("\x1b[0m", stdout);
 
-			last = ta->annos[i].end;
+			if ((last = a.sta = a.end - b.leftover) < a.end) {
+				goto redo;
+			}
 		}
 	}
 	/* write portion between last and ta->bbox.end */

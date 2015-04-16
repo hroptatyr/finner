@@ -38,6 +38,7 @@ BUILT_SOURCES += fxpair-cc.c
 libbidder_la_SOURCES += amt.c amt.h
 libbidder_la_SOURCES += wkn.c wkn.h
 libbidder_la_SOURCES += date.c date.h
+libbidder_la_SOURCES += ccysym.c ccysym.h
 
 bin_PROGRAMS += finner
 finner_SOURCES = finner.c finner.yuck

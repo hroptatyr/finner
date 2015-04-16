@@ -49,6 +49,7 @@
 #include "amt.h"
 #include "wkn.h"
 #include "date.h"
+#include "ccysym.h"
 
 const char *const finner_bidstr[FINNER_NTOKENS] = {
 	[FINNER_TERM] = "term",
@@ -61,6 +62,7 @@ const char *const finner_bidstr[FINNER_NTOKENS] = {
 	[FINNER_AMT] = "amt",
 	[FINNER_WKN] = "wkn",
 	[FINNER_DATE] = "date",
+	[FINNER_CCYSYM] = "ccysym",
 };
 
 
@@ -86,6 +88,7 @@ finner_bid(const char *str, size_t len)
 	CHECK(fn_date_bid);
 	/* high risk stuff last */
 	CHECK(fn_wkn_bid);
+	CHECK(fn_ccysym_bid);
 	return fn_nul_bid;
 }
 
