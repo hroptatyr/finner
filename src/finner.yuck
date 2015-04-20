@@ -11,3 +11,5 @@ Usage: finner extr [FILE]...
 
 Extract recognised entities in FILE.
 If FILE is omitted stdin will be used.
+
+  --all                 Include terms (uncategorised tokens) in the output
