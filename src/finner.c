@@ -43,6 +43,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -390,7 +391,7 @@ co_tbids(const struct co_terms_retval_s *ta)
 
 /* terminators */
 static void
-co_textr(const struct co_terms_retval_s *ta)
+co_textr(const struct co_terms_retval_s *ta, bool allp)
 {
 	for (size_t i = 0U; i < ta->nannos; i++) {
 		const extent_t x = ta->annos[i].x;
@@ -398,9 +399,11 @@ co_textr(const struct co_terms_retval_s *ta)
 		const char *tp = ta->base + x.sta;
 		const size_t tz = x.end - x.sta;
 
-		fwrite(tp, sizeof(*tp), tz, stdout);
-		fprintf(stdout, "\t%s\t[%zu,%zu)\n",
-			finner_bidstr[b.bid], x.sta, x.end);
+		if (b.bid || allp) {
+			fwrite(tp, sizeof(*tp), tz, stdout);
+			fprintf(stdout, "\t%s\t[%zu,%zu)\n",
+				finner_bidstr[b.bid], x.sta, x.end);
+		}
 	}
 	return;
 }
@@ -476,7 +479,7 @@ annotate1(const char *fn)
 }
 
 static int
-extract1(const char *fn)
+extract1(const char *fn, bool allp)
 {
 	const struct co_snarf_retval_s *rd = NULL;
 	const struct co_terms_retval_s *ta = NULL;
@@ -499,7 +502,7 @@ extract1(const char *fn)
 			break;
 		} else if ((tb = co_tbids(ta)) == NULL) {
 			break;
-		} else if (co_textr(tb), 0) {
+		} else if (co_textr(tb, allp), 0) {
 			break;
 		}
 	}
@@ -529,7 +532,7 @@ cmd_anno(struct yuck_cmd_anno_s argi[static 1U])
 }
 
 static int
-cmd_extr(struct yuck_cmd_anno_s argi[static 1U])
+cmd_extr(struct yuck_cmd_extr_s argi[static 1U])
 {
 	size_t i = 0U;
 	int rc = 0;
@@ -539,7 +542,7 @@ cmd_extr(struct yuck_cmd_anno_s argi[static 1U])
 	}
 	for (; i < argi->nargs; i++) {
 	one_off:
-		rc |= extract1(argi->args[i]);
+		rc |= extract1(argi->args[i], argi->all_flag);
 	}
 	return rc & 1;
 }
