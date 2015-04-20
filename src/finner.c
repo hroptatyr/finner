@@ -200,7 +200,7 @@ static const struct co_terms_retval_s {
 			cl = CLS_TRSEP;
 		} else if (*bp <= 0x22) {
 			cl = CLS_TRSEP;
-		} else if (*bp <= 0x26) {
+		} else if (*bp <= 0x25) {
 			cl = CLS_ALNUM;
 		} else if (*bp == '+') {
 			cl = CLS_ALNUM;
