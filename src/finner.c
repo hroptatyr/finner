@@ -170,7 +170,7 @@ static const struct co_terms_retval_s {
 	enum {
 		CLS_UNK,
 		CLS_PUNCT,
-		CLS_SPACE,
+		CLS_TRSEP,
 		CLS_ALNUM,
 	} cl;
 	const char *bp = rd->buf;
@@ -197,10 +197,10 @@ static const struct co_terms_retval_s {
 		if (UNLIKELY(*bp < 0)) {
 			cl = CLS_UNK;
 		} else if (*bp <= 0x20) {
-			cl = CLS_SPACE;
+			cl = CLS_TRSEP;
 		} else if (*bp <= 0x22) {
-			cl = CLS_PUNCT;
-		} else if (*bp <= 0x26) {
+			cl = CLS_TRSEP;
+		} else if (*bp <= 0x25) {
 			cl = CLS_ALNUM;
 		} else if (*bp == '+') {
 			cl = CLS_ALNUM;
@@ -209,9 +209,11 @@ static const struct co_terms_retval_s {
 		} else if (*bp < 0x3a) {
 			cl = CLS_ALNUM;
 		} else if (*bp < 0x40) {
-			cl = CLS_PUNCT;
+			cl = CLS_TRSEP;
 		} else if (*bp < 0x5b) {
 			cl = CLS_ALNUM;
+		} else if (*bp < 0x5e) {
+			cl = CLS_TRSEP;
 		} else if (*bp < 0x61) {
 			cl = CLS_PUNCT;
 		} else if (*bp < 0x7b) {
@@ -241,7 +243,7 @@ static const struct co_terms_retval_s {
 				fp = bp;
 			default:
 				break;
-			case CLS_SPACE:
+			case CLS_TRSEP:
 				fp = bp;
 				goto yield;
 			}
@@ -256,14 +258,15 @@ static const struct co_terms_retval_s {
 				/* 2 puncts in a row,
 				 * not on my account */
 				break;
-			case CLS_SPACE:
+			case CLS_TRSEP:
 				goto yield;
 			}
 			break;
 
 		yield:
 			if (UNLIKELY(ia >= rz)) {
-				size_t nuz = ROUNDTO(rz + TERMS_EXTRA, 4096U);
+				size_t nuz = ROUNDTO(
+					2U * (rz + TERMS_EXTRA), 4096U);
 
 				rv = recalloc(rv, rz + TERMS_EXTRA,
 					      nuz, sizeof(*rv->annos));
@@ -339,7 +342,7 @@ co_tbids(const struct co_terms_retval_s *ta)
 	rebid:
 		/* resize? */
 		if (nb > rz) {
-			size_t nuz = ROUNDTO(rz + TBIDS_EXTRA, 4096U);
+			size_t nuz = ROUNDTO(2U * (rz + TBIDS_EXTRA), 4096U);
 
 			rv = recalloc(rv, rz + TBIDS_EXTRA,
 				      nuz, sizeof(*rv->annos));
