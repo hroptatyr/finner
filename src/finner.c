@@ -263,7 +263,8 @@ static const struct co_terms_retval_s {
 
 		yield:
 			if (UNLIKELY(ia >= rz)) {
-				size_t nuz = ROUNDTO(rz + TERMS_EXTRA, 4096U);
+				size_t nuz = ROUNDTO(
+					2U * (rz + TERMS_EXTRA), 4096U);
 
 				rv = recalloc(rv, rz + TERMS_EXTRA,
 					      nuz, sizeof(*rv->annos));
@@ -339,7 +340,7 @@ co_tbids(const struct co_terms_retval_s *ta)
 	rebid:
 		/* resize? */
 		if (nb > rz) {
-			size_t nuz = ROUNDTO(rz + TBIDS_EXTRA, 4096U);
+			size_t nuz = ROUNDTO(2U * (rz + TBIDS_EXTRA), 4096U);
 
 			rv = recalloc(rv, rz + TBIDS_EXTRA,
 				      nuz, sizeof(*rv->annos));
