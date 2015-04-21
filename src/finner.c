@@ -401,6 +401,105 @@ co_tbids(const struct co_terms_retval_s *ta)
 #undef TBIDS_EXTRA
 }
 
+/* collectors
+ *
+ * Go through bids present in TB and merge adjacent ones into an
+ * annotated collection. */
+static const struct co_terms_retval_s*
+co_tcoll(const struct co_terms_retval_s *tb)
+{
+	static struct co_terms_retval_s *rv;
+	static size_t rz;
+	size_t nc = 0U;
+	size_t lastb = 0U;
+
+#define TCOLL_EXTRA	(sizeof(*rv) / sizeof(*rv->annos))
+	_Static_assert(TCOLL_EXTRA > 0U, "tcoll array type is bigger than header");
+
+	if (UNLIKELY(rv == NULL && tb == NULL)) {
+		/* just return */
+		return NULL;
+	} else if (UNLIKELY(tb == NULL)) {
+		free(rv);
+		rv = NULL;
+		return NULL;
+	} else if (UNLIKELY(rv == NULL)) {
+		/* get a comfy cushion */
+		rv = calloc(4096U, sizeof(*rv->annos));
+		rz = 4096U - TCOLL_EXTRA;
+	}
+
+	/* preset RV with goodness */
+	rv->base = tb->base;
+	rv->bbox = tb->bbox;
+	for (size_t i = 0U; i < tb->nannos; i++) {
+		const struct anno_s *const av = tb->annos + i;
+		const size_t na = tb->nannos - i;
+		fn_bid_t c;
+
+		if (!av->b.bid) {
+			continue;
+		} else if (!(c = finner_collect(av, na)).bid) {
+			continue;
+		} else if (i == 0U && UNLIKELY(!c.span)) {
+			/* huh?  this must be broken */
+			continue;
+		}
+		/* copy all tokens from LASTB to I, if space there is */
+		if (nc + (i - lastb) + 1U > rz) {
+			/* resize */
+			const size_t olz = rz + TCOLL_EXTRA;
+			const size_t least = nc + (i - lastb) + 1U;
+			const size_t nuz = ROUNDLEASTTO(2U * olz, least, 4096U);
+
+			rv = recalloc(rv, olz, nuz, sizeof(*rv->annos));
+			rz = nuz - TCOLL_EXTRA;
+		}
+		memcpy(rv->annos + nc,
+		       tb->annos + lastb, (i - lastb) * sizeof(*rv->annos));
+		/* adjust */
+		nc += (i - lastb);
+		lastb = i + c.span;
+
+		if (UNLIKELY(!c.span)) {
+			/* we've got to cut this short */
+			rv->bbox.end = tb->annos[i - 1U].x.end;
+			break;
+		}
+		/* merge the extents */
+		rv->annos[nc].x.sta = tb->annos[i].x.sta;
+		rv->annos[nc].x.end = tb->annos[i + c.span - 1U].x.end;
+		/* now copy the beef */
+		rv->annos[nc].b = c;
+		/* that's it */
+		nc++;
+		i += c.span - 1U;
+	}
+	/* special case when there was no copying at all */
+	if (!nc) {
+		return tb;
+	}
+	/* copy the rest of the annos */
+	if (nc + (tb->nannos - lastb) > rz) {
+		/* resize */
+		const size_t olz = rz + TCOLL_EXTRA;
+		const size_t least = nc + (tb->nannos - lastb);
+		const size_t nuz = ROUNDLEASTTO(2U * olz, least, 4096U);
+
+		rv = recalloc(rv, olz, nuz, sizeof(*rv->annos));
+		rz = nuz - TCOLL_EXTRA;
+	}
+	memcpy(rv->annos + nc,
+	       tb->annos + lastb, (tb->nannos - lastb) * sizeof(*rv->annos));
+	/* adjust */
+	nc += (tb->nannos - lastb);
+
+	/* assign our findings, and copy base and bbox */
+	rv->nannos = nc;
+	return rv;
+#undef TCOLL_EXTRA
+}
+
 /* terminators */
 static void
 co_textr(const struct co_terms_retval_s *ta, bool allp)
