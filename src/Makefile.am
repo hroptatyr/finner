@@ -41,6 +41,7 @@ libbidder_la_SOURCES += num.c num.h
 libbidder_la_SOURCES += wkn.c wkn.h
 libbidder_la_SOURCES += date.c date.h
 libbidder_la_SOURCES += ccysym.c ccysym.h
+libbidder_la_SOURCES += amt.c amt.h
 
 bin_PROGRAMS += finner
 finner_SOURCES = finner.c finner.yuck

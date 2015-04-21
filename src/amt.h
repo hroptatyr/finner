@@ -37,8 +37,8 @@
 #if !defined INCLUDED_amt_h_
 #define INCLUDED_amt_h_
 
-#include "bidder.h"
+#include "collector.h"
 
-extern fn_bid_t fn_amt_bid(const char *str, size_t len);
+extern fn_bid_t fn_amt_collect(const struct anno_s *av, size_t len);
 
 #endif	/* INCLUDED_amt_h_ */

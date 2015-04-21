@@ -39,6 +39,7 @@
 #endif	/* HAVE_CONFIG_H */
 #include "collector.h"
 #include "nifty.h"
+#include "amt.h"
 
 
 /* public api */
@@ -53,6 +54,7 @@ finner_collect(const struct anno_s *av, size_t len)
 	}
 
 	/* start the bidding */
+	CHECK(fn_amt_collect);
 	return fn_nul_bid;
 }
 

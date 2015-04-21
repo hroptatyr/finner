@@ -93,4 +93,22 @@ struct anno_s {
 	fn_bid_t b;
 };
 
+
+/* convenience */
+static inline size_t
+fn_extent_dist(extent_t a, extent_t b)
+{
+/* calculate the distance between extents A and B,
+ * defined as
+ * + b.sta - a.end  for  a < b,
+ * + a.sta - b.end  for  b < a,
+ * + 0 otherwise */
+	if (b.sta > a.end) {
+		return b.sta - a.end;
+	} else if (b.end < a.sta) {
+		return a.sta - b.end;
+	}
+	return 0U;
+}
+
 #endif	/* INCLUDED_finner_h_ */
