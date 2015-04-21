@@ -52,6 +52,7 @@
 #include <stdint.h>
 #include "finner.h"
 #include "bidder.h"
+#include "collector.h"
 #include "nifty.h"
 
 _Static_assert(
