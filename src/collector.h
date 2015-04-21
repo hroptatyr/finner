@@ -1,4 +1,4 @@
-/*** bidder.h -- determine token types
+/*** collector.h -- determine higher level tokens
  *
  * Copyright (C) 2014-2015 Sebastian Freundt
  *
@@ -34,20 +34,19 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  ***/
-#if !defined INCLUDED_bidder_h_
-#define INCLUDED_bidder_h_
+#if !defined INCLUDED_collector_h_
+#define INCLUDED_collector_h_
 
 #include <stddef.h>
+#include <stdint.h>
 #include "finner.h"
 
 /**
  * A bidder class. */
-typedef fn_bid_t(*fn_bid_f)(const char *str, size_t len);
+typedef fn_bid_t(*fn_collect_f)(const struct anno_s *av, size_t len);
 
 /**
  * Convenience routine to determine the token type. */
-extern fn_bid_t finner_bid(const char *str, size_t len);
-
-extern const char *const finner_bidstr[FINNER_NTAGS];
+extern fn_bid_t finner_collect(const struct anno_s *av, size_t len);
 
 #endif	/* INCLUDED_bidder_h_ */

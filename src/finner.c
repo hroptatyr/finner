@@ -49,20 +49,15 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <assert.h>
+#include <stdint.h>
+#include "finner.h"
 #include "bidder.h"
+#include "collector.h"
 #include "nifty.h"
 
-#define ROUNDTO(x, n)	(((x) + ((n) - 1U)) & ~(size_t)((n) - 1U))
-
-typedef struct {
-	size_t sta;
-	size_t end;
-} extent_t;
-
-struct anno_s {
-	extent_t x;
-	fn_bid_t b;
-};
+_Static_assert(
+	sizeof(fn_bid_t) == 2U * sizeof(uintptr_t),
+	"possible size problem with fn_bid_t");
 
 
 static void
@@ -88,6 +83,23 @@ recalloc(void *old, size_t oldnmemb, size_t newnmemb, size_t size)
 	old = realloc(old, newnmemb * size);
 	memset((char*)old + oldnmemb * size, 0, (newnmemb - oldnmemb) * size);
 	return old;
+}
+
+static inline size_t
+ROUNDTO(size_t x, size_t n)
+{
+/* round X to N */
+	return (x + (n - 1U)) & ~(size_t)(n - 1U);
+}
+
+static inline size_t
+ROUNDLEASTTO(size_t x, size_t least, size_t n)
+{
+/* round X (but at least LEAST) to N */
+	if (x >= least) {
+		return ROUNDTO(x, n);
+	}
+	return ROUNDTO(least, n);
 }
 
 
@@ -266,11 +278,11 @@ static const struct co_terms_retval_s {
 
 		yield:
 			if (UNLIKELY(ia >= rz)) {
-				size_t nuz = ROUNDTO(
-					2U * (rz + TERMS_EXTRA), 4096U);
+				/* resize */
+				const size_t olz = rz + TERMS_EXTRA;
+				const size_t nuz = ROUNDTO(2U * olz, 4096U);
 
-				rv = recalloc(rv, rz + TERMS_EXTRA,
-					      nuz, sizeof(*rv->annos));
+				rv = recalloc(rv, olz, nuz, sizeof(*rv->annos));
 				rz = nuz - TERMS_EXTRA;
 			}
 			rv->annos[ia].x.sta = ap - rd->buf;
@@ -317,7 +329,7 @@ co_tbids(const struct co_terms_retval_s *ta)
 	size_t nb = 0U;
 
 #define TBIDS_EXTRA	(sizeof(*rv) / sizeof(*rv->annos))
-	_Static_assert(TBIDS_EXTRA > 0U, "terms array type is bigger than header");
+	_Static_assert(TBIDS_EXTRA > 0U, "tbids array type is bigger than header");
 
 	if (UNLIKELY(rv == NULL && ta == NULL)) {
 		/* just return */
@@ -343,10 +355,10 @@ co_tbids(const struct co_terms_retval_s *ta)
 	rebid:
 		/* resize? */
 		if (nb > rz) {
-			size_t nuz = ROUNDTO(2U * (rz + TBIDS_EXTRA), 4096U);
+			const size_t olz = rz + TBIDS_EXTRA;
+			const size_t nuz = ROUNDTO(2U * olz, 4096U);
 
-			rv = recalloc(rv, rz + TBIDS_EXTRA,
-				      nuz, sizeof(*rv->annos));
+			rv = recalloc(rv, olz, nuz, sizeof(*rv->annos));
 			rz = nuz - TBIDS_EXTRA;
 		}
 
@@ -387,6 +399,105 @@ co_tbids(const struct co_terms_retval_s *ta)
 	rv->bbox = ta->bbox;
 	return rv;
 #undef TBIDS_EXTRA
+}
+
+/* collectors
+ *
+ * Go through bids present in TB and merge adjacent ones into an
+ * annotated collection. */
+static const struct co_terms_retval_s*
+co_tcoll(const struct co_terms_retval_s *tb)
+{
+	static struct co_terms_retval_s *rv;
+	static size_t rz;
+	size_t nc = 0U;
+	size_t lastb = 0U;
+
+#define TCOLL_EXTRA	(sizeof(*rv) / sizeof(*rv->annos))
+	_Static_assert(TCOLL_EXTRA > 0U, "tcoll array type is bigger than header");
+
+	if (UNLIKELY(rv == NULL && tb == NULL)) {
+		/* just return */
+		return NULL;
+	} else if (UNLIKELY(tb == NULL)) {
+		free(rv);
+		rv = NULL;
+		return NULL;
+	} else if (UNLIKELY(rv == NULL)) {
+		/* get a comfy cushion */
+		rv = calloc(4096U, sizeof(*rv->annos));
+		rz = 4096U - TCOLL_EXTRA;
+	}
+
+	/* preset RV with goodness */
+	rv->base = tb->base;
+	rv->bbox = tb->bbox;
+	for (size_t i = 0U; i < tb->nannos; i++) {
+		const struct anno_s *const av = tb->annos + i;
+		const size_t na = tb->nannos - i;
+		fn_bid_t c;
+
+		if (!av->b.bid) {
+			continue;
+		} else if (!(c = finner_collect(av, na)).bid) {
+			continue;
+		} else if (i == 0U && UNLIKELY(!c.span)) {
+			/* huh?  this must be broken */
+			continue;
+		}
+		/* copy all tokens from LASTB to I, if space there is */
+		if (nc + (i - lastb) + 1U > rz) {
+			/* resize */
+			const size_t olz = rz + TCOLL_EXTRA;
+			const size_t least = nc + (i - lastb) + 1U;
+			const size_t nuz = ROUNDLEASTTO(2U * olz, least, 4096U);
+
+			rv = recalloc(rv, olz, nuz, sizeof(*rv->annos));
+			rz = nuz - TCOLL_EXTRA;
+		}
+		memcpy(rv->annos + nc,
+		       tb->annos + lastb, (i - lastb) * sizeof(*rv->annos));
+		/* adjust */
+		nc += (i - lastb);
+		lastb = i + c.span;
+
+		if (UNLIKELY(!c.span)) {
+			/* we've got to cut this short */
+			rv->bbox.end = tb->annos[i - 1U].x.end;
+			break;
+		}
+		/* merge the extents */
+		rv->annos[nc].x.sta = tb->annos[i].x.sta;
+		rv->annos[nc].x.end = tb->annos[i + c.span - 1U].x.end;
+		/* now copy the beef */
+		rv->annos[nc].b = c;
+		/* that's it */
+		nc++;
+		i += c.span - 1U;
+	}
+	/* special case when there was no copying at all */
+	if (!nc) {
+		return tb;
+	}
+	/* copy the rest of the annos */
+	if (nc + (tb->nannos - lastb) > rz) {
+		/* resize */
+		const size_t olz = rz + TCOLL_EXTRA;
+		const size_t least = nc + (tb->nannos - lastb);
+		const size_t nuz = ROUNDLEASTTO(2U * olz, least, 4096U);
+
+		rv = recalloc(rv, olz, nuz, sizeof(*rv->annos));
+		rz = nuz - TCOLL_EXTRA;
+	}
+	memcpy(rv->annos + nc,
+	       tb->annos + lastb, (tb->nannos - lastb) * sizeof(*rv->annos));
+	/* adjust */
+	nc += (tb->nannos - lastb);
+
+	/* assign our findings, and copy base and bbox */
+	rv->nannos = nc;
+	return rv;
+#undef TCOLL_EXTRA
 }
 
 /* terminators */
@@ -448,8 +559,7 @@ static int
 annotate1(const char *fn)
 {
 	const struct co_snarf_retval_s *rd = NULL;
-	const struct co_terms_retval_s *ta = NULL;
-	const struct co_terms_retval_s *tb = NULL;
+	const struct co_terms_retval_s *tv = NULL;
 	int rc = 0;
 	int fd;
 
@@ -461,14 +571,16 @@ annotate1(const char *fn)
 		return -1;
 	}
 
-	for (ssize_t npr = 0;; npr = ta->bbox.end) {
+	for (ssize_t npr = 0;; npr = tv->bbox.end) {
 		if ((rd = co_snarf(fd, npr)) == NULL) {
 			break;
-		} else if ((ta = co_terms(rd)) == NULL) {
+		} else if ((tv = co_terms(rd)) == NULL) {
 			break;
-		} else if ((tb = co_tbids(ta)) == NULL) {
+		} else if ((tv = co_tbids(tv)) == NULL) {
 			break;
-		} else if (co_tanno(tb), 0) {
+		} else if ((tv = co_tcoll(tv)) == NULL) {
+			break;
+		} else if (co_tanno(tv), 0) {
 			break;
 		}
 	}
@@ -482,8 +594,7 @@ static int
 extract1(const char *fn, bool allp)
 {
 	const struct co_snarf_retval_s *rd = NULL;
-	const struct co_terms_retval_s *ta = NULL;
-	const struct co_terms_retval_s *tb = NULL;
+	const struct co_terms_retval_s *tv = NULL;
 	int rc = 0;
 	int fd;
 
@@ -495,14 +606,16 @@ extract1(const char *fn, bool allp)
 		return -1;
 	}
 
-	for (ssize_t npr = 0;; npr = ta->bbox.end) {
+	for (ssize_t npr = 0;; npr = tv->bbox.end) {
 		if ((rd = co_snarf(fd, npr)) == NULL) {
 			break;
-		} else if ((ta = co_terms(rd)) == NULL) {
+		} else if ((tv = co_terms(rd)) == NULL) {
 			break;
-		} else if ((tb = co_tbids(ta)) == NULL) {
+		} else if ((tv = co_tbids(tv)) == NULL) {
 			break;
-		} else if (co_textr(tb, allp), 0) {
+		} else if ((tv = co_tcoll(tv)) == NULL) {
+			break;
+		} else if (co_textr(tv, allp), 0) {
 			break;
 		}
 	}
