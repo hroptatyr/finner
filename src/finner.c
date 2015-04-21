@@ -559,8 +559,7 @@ static int
 annotate1(const char *fn)
 {
 	const struct co_snarf_retval_s *rd = NULL;
-	const struct co_terms_retval_s *ta = NULL;
-	const struct co_terms_retval_s *tb = NULL;
+	const struct co_terms_retval_s *tv = NULL;
 	int rc = 0;
 	int fd;
 
@@ -572,14 +571,16 @@ annotate1(const char *fn)
 		return -1;
 	}
 
-	for (ssize_t npr = 0;; npr = ta->bbox.end) {
+	for (ssize_t npr = 0;; npr = tv->bbox.end) {
 		if ((rd = co_snarf(fd, npr)) == NULL) {
 			break;
-		} else if ((ta = co_terms(rd)) == NULL) {
+		} else if ((tv = co_terms(rd)) == NULL) {
 			break;
-		} else if ((tb = co_tbids(ta)) == NULL) {
+		} else if ((tv = co_tbids(tv)) == NULL) {
 			break;
-		} else if (co_tanno(tb), 0) {
+		} else if ((tv = co_tcoll(tv)) == NULL) {
+			break;
+		} else if (co_tanno(tv), 0) {
 			break;
 		}
 	}
@@ -593,8 +594,7 @@ static int
 extract1(const char *fn, bool allp)
 {
 	const struct co_snarf_retval_s *rd = NULL;
-	const struct co_terms_retval_s *ta = NULL;
-	const struct co_terms_retval_s *tb = NULL;
+	const struct co_terms_retval_s *tv = NULL;
 	int rc = 0;
 	int fd;
 
@@ -606,14 +606,16 @@ extract1(const char *fn, bool allp)
 		return -1;
 	}
 
-	for (ssize_t npr = 0;; npr = ta->bbox.end) {
+	for (ssize_t npr = 0;; npr = tv->bbox.end) {
 		if ((rd = co_snarf(fd, npr)) == NULL) {
 			break;
-		} else if ((ta = co_terms(rd)) == NULL) {
+		} else if ((tv = co_terms(rd)) == NULL) {
 			break;
-		} else if ((tb = co_tbids(ta)) == NULL) {
+		} else if ((tv = co_tbids(tv)) == NULL) {
 			break;
-		} else if (co_textr(tb, allp), 0) {
+		} else if ((tv = co_tcoll(tv)) == NULL) {
+			break;
+		} else if (co_textr(tv, allp), 0) {
 			break;
 		}
 	}
