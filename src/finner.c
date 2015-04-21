@@ -57,7 +57,6 @@
 _Static_assert(
 	sizeof(fn_bid_t) == 2U * sizeof(uintptr_t),
 	"possible size problem with fn_bid_t");
-#define ROUNDTO(x, n)	(((x) + ((n) - 1U)) & ~(size_t)((n) - 1U))
 
 
 static void
@@ -83,6 +82,23 @@ recalloc(void *old, size_t oldnmemb, size_t newnmemb, size_t size)
 	old = realloc(old, newnmemb * size);
 	memset((char*)old + oldnmemb * size, 0, (newnmemb - oldnmemb) * size);
 	return old;
+}
+
+static inline size_t
+ROUNDTO(size_t x, size_t n)
+{
+/* round X to N */
+	return (x + (n - 1U)) & ~(size_t)(n - 1U);
+}
+
+static inline size_t
+ROUNDLEASTTO(size_t x, size_t least, size_t n)
+{
+/* round X (but at least LEAST) to N */
+	if (x >= least) {
+		return ROUNDTO(x, n);
+	}
+	return ROUNDTO(least, n);
 }
 
 
@@ -261,11 +277,11 @@ static const struct co_terms_retval_s {
 
 		yield:
 			if (UNLIKELY(ia >= rz)) {
-				size_t nuz = ROUNDTO(
-					2U * (rz + TERMS_EXTRA), 4096U);
+				/* resize */
+				const size_t olz = rz + TERMS_EXTRA;
+				const size_t nuz = ROUNDTO(2U * olz, 4096U);
 
-				rv = recalloc(rv, rz + TERMS_EXTRA,
-					      nuz, sizeof(*rv->annos));
+				rv = recalloc(rv, olz, nuz, sizeof(*rv->annos));
 				rz = nuz - TERMS_EXTRA;
 			}
 			rv->annos[ia].x.sta = ap - rd->buf;
@@ -312,7 +328,7 @@ co_tbids(const struct co_terms_retval_s *ta)
 	size_t nb = 0U;
 
 #define TBIDS_EXTRA	(sizeof(*rv) / sizeof(*rv->annos))
-	_Static_assert(TBIDS_EXTRA > 0U, "terms array type is bigger than header");
+	_Static_assert(TBIDS_EXTRA > 0U, "tbids array type is bigger than header");
 
 	if (UNLIKELY(rv == NULL && ta == NULL)) {
 		/* just return */
@@ -338,10 +354,10 @@ co_tbids(const struct co_terms_retval_s *ta)
 	rebid:
 		/* resize? */
 		if (nb > rz) {
-			size_t nuz = ROUNDTO(2U * (rz + TBIDS_EXTRA), 4096U);
+			const size_t olz = rz + TBIDS_EXTRA;
+			const size_t nuz = ROUNDTO(2U * olz, 4096U);
 
-			rv = recalloc(rv, rz + TBIDS_EXTRA,
-				      nuz, sizeof(*rv->annos));
+			rv = recalloc(rv, olz, nuz, sizeof(*rv->annos));
 			rz = nuz - TBIDS_EXTRA;
 		}
 
