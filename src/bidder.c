@@ -50,9 +50,8 @@
 #include "wkn.h"
 #include "date.h"
 #include "ccysym.h"
-#include "amt.h"
 
-const char *const finner_bidstr[FINNER_NTOKENS] = {
+const char *const finner_bidstr[FINNER_NTAGS] = {
 	[FINNER_TERM] = "term",
 	[FINNER_FIGI] = "figi",
 	[FINNER_ISIN] = "isin",
@@ -64,6 +63,9 @@ const char *const finner_bidstr[FINNER_NTOKENS] = {
 	[FINNER_WKN] = "wkn",
 	[FINNER_DATE] = "date",
 	[FINNER_CCYSYM] = "ccysym",
+
+	/* collectors */
+	[FINNER_AMT] = "amt",
 };
 
 

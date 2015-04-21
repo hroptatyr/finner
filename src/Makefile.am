@@ -21,7 +21,8 @@ CLEANFILES += version.c
 EXTRA_DIST += version.c.in
 
 noinst_LTLIBRARIES += libbidder.la
-libbidder_la_SOURCES = bidder.c bidder.h
+libbidder_la_SOURCES = finner.h
+libbidder_la_SOURCES += bidder.c bidder.h
 EXTRA_libbidder_la_SOURCES =
 libbidder_la_SOURCES += figi.c figi.h
 libbidder_la_SOURCES += isin.c isin.h

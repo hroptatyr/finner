@@ -49,20 +49,15 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <assert.h>
+#include <stdint.h>
+#include "finner.h"
 #include "bidder.h"
 #include "nifty.h"
 
+_Static_assert(
+	sizeof(fn_bid_t) == 2U * sizeof(uintptr_t),
+	"possible size problem with fn_bid_t");
 #define ROUNDTO(x, n)	(((x) + ((n) - 1U)) & ~(size_t)((n) - 1U))
-
-typedef struct {
-	size_t sta;
-	size_t end;
-} extent_t;
-
-struct anno_s {
-	extent_t x;
-	fn_bid_t b;
-};
 
 
 static void

@@ -1,4 +1,4 @@
-/*** bidder.h -- determine token types
+/*** finner.h -- main snippet
  *
  * Copyright (C) 2014-2015 Sebastian Freundt
  *
@@ -34,20 +34,63 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  ***/
-#if !defined INCLUDED_bidder_h_
-#define INCLUDED_bidder_h_
+#if !defined INCLUDED_finner_h_
+#define INCLUDED_finner_h_
+#include <stdint.h>
 
-#include <stddef.h>
-#include "finner.h"
+typedef enum {
+	FINNER_TERM,
+	FINNER_FIGI,
+	FINNER_ISIN,
+	FINNER_CUSIP,
+	FINNER_SEDOL,
+	FINNER_CCY,
+	FINNER_FXPAIR,
+	FINNER_NUM,
+	FINNER_WKN,
+	FINNER_DATE,
+	FINNER_CCYSYM,
+	FINNER_NTOKENS,
+
+	/* collections here */
+	FINNER_AMT,
+	FINNER_NTAGS
+} fn_tok_t;
 
 /**
- * A bidder class. */
-typedef fn_bid_t(*fn_bid_f)(const char *str, size_t len);
+ * We'll do anonymous bidding.  Registered bidders are asked in
+ * sequence to submit a tender.  The first bidder with a bid different
+ * from FINNER_TERM will seal the deal.
+ *
+ * Optionally, the bidder can submit a tender for only a *prefix* of the
+ * term string in question.  In that case LEFTOVER must be the number
+ * of bytes the bidder chose to ignore.  Internally, this will result
+ * in the term being cut in two halves, the prefix one with a bid, and
+ * a new term constructed from the left-overs that is subject to bidding
+ * in the next round.
+ *
+ * The STATE value can be used by the bidder to record some state.
+ * Refer to the documentation of the bidder in question to find out
+ * about STATE. */
+typedef struct {
+	fn_tok_t bid;
+	union {
+		unsigned int leftover;
+		unsigned int span;
+	};
+	uintptr_t state;
+} fn_bid_t;
 
-/**
- * Convenience routine to determine the token type. */
-extern fn_bid_t finner_bid(const char *str, size_t len);
+#define fn_nul_bid	((fn_bid_t){FINNER_TERM})
 
-extern const char *const finner_bidstr[FINNER_NTAGS];
+typedef struct {
+	size_t sta;
+	size_t end;
+} extent_t;
 
-#endif	/* INCLUDED_bidder_h_ */
+struct anno_s {
+	extent_t x;
+	fn_bid_t b;
+};
+
+#endif	/* INCLUDED_finner_h_ */
