@@ -1,4 +1,4 @@
-/*** bidder.h -- determine token types
+/*** num.c -- checker for numbers
  *
  * Copyright (C) 2014-2015 Sebastian Freundt
  *
@@ -34,62 +34,70 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  ***/
-#if !defined INCLUDED_bidder_h_
-#define INCLUDED_bidder_h_
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <assert.h>
+#include "nifty.h"
+#include "num.h"
 
-#include <stddef.h>
-#include <stdint.h>
+
+/* class implementation */
+fn_bid_t
+fn_num_bid(const char *str, size_t len)
+{
+	const char *sp = str;
+	const char *const ep = str + len;
 
-typedef enum {
-	FINNER_TERM,
-	FINNER_FIGI,
-	FINNER_ISIN,
-	FINNER_CUSIP,
-	FINNER_SEDOL,
-	FINNER_CCY,
-	FINNER_FXPAIR,
-	FINNER_NUM,
-	FINNER_WKN,
-	FINNER_DATE,
-	FINNER_CCYSYM,
-	FINNER_AMT,
-	FINNER_NTOKENS
-} fn_tok_t;
+	if (UNLIKELY(*sp == '-')) {
+		/* allow leading `-' */
+		sp++;
+	}
+	if (*sp == '0') {
+		/* demand decimal dot now */
+		if (*++sp != '.') {
+			return fn_nul_bid;
+		}
+	} else if (!(*sp >= '1' && *sp <= '9')) {
+		return fn_nul_bid;
+	}
+	/* only digits for now */
+	for (sp++; sp < ep; sp++) {
+		if (!(*sp >= '0' && *sp <= '9')) {
+			break;
+		}
+	}
+	if (sp < ep) {
+		/* might be `.' or `,' */
+		switch (*sp++) {
+		case '.':
+			/* only allow digits from now on */
+			for (; sp < ep; sp++) {
+				if (!(*sp >= '0' && *sp <= '9')) {
+					return fn_nul_bid;
+				}
+			}
+			break;
+		case ',':
+		rechk:
+			/* allow digits */
+			for (size_t i = 3U; i && sp < ep; sp++, i--) {
+				if (!(*sp >= '0' && *sp <= '9')) {
+					return fn_nul_bid;
+				}
+			}
+			if (sp >= ep) {
+				break;
+			} else if (*sp++ == ',') {
+				/* ah, another comma group */
+				goto rechk;
+			}
+			/* otherwise it's bullshit */
+		default:
+			return fn_nul_bid;
+		}
+	}
+	return (fn_bid_t){FINNER_NUM};
+}
 
-/**
- * We'll do anonymous bidding.  Registered bidders are asked in
- * sequence to submit a tender.  The first bidder with a bid different
- * from FINNER_TERM will seal the deal.
- *
- * Optionally, the bidder can submit a tender for only a *prefix* of the
- * term string in question.  In that case LEFTOVER must be the number
- * of bytes the bidder chose to ignore.  Internally, this will result
- * in the term being cut in two halves, the prefix one with a bid, and
- * a new term constructed from the left-overs that is subject to bidding
- * in the next round.
- *
- * The STATE value can be used by the bidder to record some state.
- * Refer to the documentation of the bidder in question to find out
- * about STATE. */
-typedef struct {
-	fn_tok_t bid;
-	unsigned int leftover;
-	uintptr_t state;
-} fn_bid_t;
-
-_Static_assert(
-	sizeof(fn_bid_t) == 2U * sizeof(uintptr_t),
-	"possible size problem with fn_bid_t");
-#define fn_nul_bid	((fn_bid_t){FINNER_TERM})
-
-/**
- * A bidder class. */
-typedef fn_bid_t(*fn_bid_f)(const char *str, size_t len);
-
-/**
- * Convenience routine to determine the token type. */
-extern fn_bid_t finner_bid(const char *str, size_t len);
-
-extern const char *const finner_bidstr[FINNER_NTOKENS];
-
-#endif	/* INCLUDED_bidder_h_ */
+/* num.c ends here */
