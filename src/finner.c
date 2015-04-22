@@ -529,11 +529,11 @@ co_tanno(const struct co_terms_retval_s *ta, bool UNUSED(allp))
 	for (size_t i = 0U; i < ta->nannos; i++) {
 		const extent_t x = ta->annos[i].x;
 		const fn_bid_t b = ta->annos[i].b;
+		const size_t this = x.sta;
 
 		/* only annotate actual tokens */
-		if (b.bid) {
+		if (b.bid && this > last) {
 			/* print from last streak to here */
-			const size_t this = x.sta;
 			const size_t llen = this - last;
 			const size_t tlen = x.end - this;
 
