@@ -83,7 +83,7 @@ fn_ccysym_bid(const char *str, size_t len)
 		return fn_nul_bid;
 	}
 
-	return (fn_bid_t){FINNER_CCYSYM, ep - sp};
+	return (fn_bid_t){FINNER_CCY, ep - sp};
 }
 
 /* ccysym.c ends here */
