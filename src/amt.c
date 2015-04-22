@@ -68,8 +68,8 @@ fn_amt_collect(const struct anno_s *a, size_t n)
 		size_t a01 = fn_extent_dist(a[0U].x, a[1U].x);
 		size_t a12 = fn_extent_dist(a[1U].x, a[2U].x);
 
-		if (a12 < a01) {
-			/* better report NUL here then */
+		if (a12 < a01 && a->b.bid == FINNER_NUM) {
+			/* we prefer the constellation CCY NUM */
 			return fn_nul_bid;
 		}
 	}

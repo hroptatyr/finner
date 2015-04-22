@@ -446,10 +446,10 @@ co_tcoll(const struct co_terms_retval_s *tb)
 			continue;
 		}
 		/* copy all tokens from LASTB to I, if space there is */
-		if (nc + (i - lastb) + 1U > rz) {
+		if (nc + (i - lastb) + c.span + 1U > rz) {
 			/* resize */
 			const size_t olz = rz + TCOLL_EXTRA;
-			const size_t least = nc + (i - lastb) + 1U;
+			const size_t least = nc + (i - lastb) + c.span + 1U;
 			const size_t nuz = ROUNDLEASTTO(2U * olz, least, 4096U);
 
 			rv = recalloc(rv, olz, nuz, sizeof(*rv->annos));
@@ -459,7 +459,7 @@ co_tcoll(const struct co_terms_retval_s *tb)
 		       tb->annos + lastb, (i - lastb) * sizeof(*rv->annos));
 		/* adjust */
 		nc += (i - lastb);
-		lastb = i + c.span;
+		lastb = i;
 
 		if (UNLIKELY(!c.span)) {
 			/* we've got to cut this short */
@@ -520,7 +520,7 @@ co_textr(const struct co_terms_retval_s *ta, bool allp)
 }
 
 static void
-co_tanno(const struct co_terms_retval_s *ta)
+co_tanno(const struct co_terms_retval_s *ta, bool UNUSED(allp))
 {
 	/* check output device */
 	const int colourp = isatty(STDOUT_FILENO);
@@ -555,8 +555,13 @@ co_tanno(const struct co_terms_retval_s *ta)
 }
 
 
+struct ctx_s {
+	bool allp;
+	void(*prntf)(const struct co_terms_retval_s *ta, bool allp);
+};
+
 static int
-annotate1(const char *fn)
+proc1(const struct ctx_s *ctx, const char *fn)
 {
 	const struct co_snarf_retval_s *rd = NULL;
 	const struct co_terms_retval_s *tv = NULL;
@@ -580,42 +585,7 @@ annotate1(const char *fn)
 			break;
 		} else if ((tv = co_tcoll(tv)) == NULL) {
 			break;
-		} else if (co_tanno(tv), 0) {
-			break;
-		}
-	}
-
-	/* clean up */
-	close(fd);
-	return rc;
-}
-
-static int
-extract1(const char *fn, bool allp)
-{
-	const struct co_snarf_retval_s *rd = NULL;
-	const struct co_terms_retval_s *tv = NULL;
-	int rc = 0;
-	int fd;
-
-	if (fn == NULL) {
-		fd = STDIN_FILENO;
-		fn = "-";
-	} else if ((fd = open(fn, O_RDONLY)) < 0) {
-		error("Error: cannot open file `%s'", fn);
-		return -1;
-	}
-
-	for (ssize_t npr = 0;; npr = tv->bbox.end) {
-		if ((rd = co_snarf(fd, npr)) == NULL) {
-			break;
-		} else if ((tv = co_terms(rd)) == NULL) {
-			break;
-		} else if ((tv = co_tbids(tv)) == NULL) {
-			break;
-		} else if ((tv = co_tcoll(tv)) == NULL) {
-			break;
-		} else if (co_textr(tv, allp), 0) {
+		} else if (ctx->prntf(tv, ctx->allp), 0) {
 			break;
 		}
 	}
@@ -631,6 +601,7 @@ extract1(const char *fn, bool allp)
 static int
 cmd_anno(struct yuck_cmd_anno_s argi[static 1U])
 {
+	struct ctx_s ctx = {.prntf = co_tanno};
 	size_t i = 0U;
 	int rc = 0;
 
@@ -639,7 +610,7 @@ cmd_anno(struct yuck_cmd_anno_s argi[static 1U])
 	}
 	for (; i < argi->nargs; i++) {
 	one_off:
-		rc |= annotate1(argi->args[i]);
+		rc |= proc1(&ctx, argi->args[i]);
 	}
 	return rc & 1;
 }
@@ -647,6 +618,7 @@ cmd_anno(struct yuck_cmd_anno_s argi[static 1U])
 static int
 cmd_extr(struct yuck_cmd_extr_s argi[static 1U])
 {
+	struct ctx_s ctx = {.allp = argi->all_flag, .prntf = co_textr};
 	size_t i = 0U;
 	int rc = 0;
 
@@ -655,7 +627,7 @@ cmd_extr(struct yuck_cmd_extr_s argi[static 1U])
 	}
 	for (; i < argi->nargs; i++) {
 	one_off:
-		rc |= extract1(argi->args[i], argi->all_flag);
+		rc |= proc1(&ctx, argi->args[i]);
 	}
 	return rc & 1;
 }
