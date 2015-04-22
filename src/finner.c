@@ -446,10 +446,10 @@ co_tcoll(const struct co_terms_retval_s *tb)
 			continue;
 		}
 		/* copy all tokens from LASTB to I, if space there is */
-		if (nc + (i - lastb) + 1U > rz) {
+		if (nc + (i - lastb) + c.span + 1U > rz) {
 			/* resize */
 			const size_t olz = rz + TCOLL_EXTRA;
-			const size_t least = nc + (i - lastb) + 1U;
+			const size_t least = nc + (i - lastb) + c.span + 1U;
 			const size_t nuz = ROUNDLEASTTO(2U * olz, least, 4096U);
 
 			rv = recalloc(rv, olz, nuz, sizeof(*rv->annos));
@@ -459,7 +459,7 @@ co_tcoll(const struct co_terms_retval_s *tb)
 		       tb->annos + lastb, (i - lastb) * sizeof(*rv->annos));
 		/* adjust */
 		nc += (i - lastb);
-		lastb = i + c.span;
+		lastb = i;
 
 		if (UNLIKELY(!c.span)) {
 			/* we've got to cut this short */
