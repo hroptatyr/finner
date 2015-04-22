@@ -41,6 +41,28 @@
 #include "nifty.h"
 #include "ccysym.h"
 
+typedef enum {
+	UNK,
+	AUD,
+	CAD,
+	DEM,
+	EUR,
+	GBP,
+	JPY,
+	USD,
+	NCCY
+} ccy_t;
+
+static const char *const ccy[] = {
+	[AUD] = "AUD",
+	[CAD] = "CAD",
+	[DEM] = "DEM",
+	[EUR] = "EUR",
+	[GBP] = "GBP",
+	[JPY] = "JPY",
+	[USD] = "USD",
+};
+
 
 /* class implementation */
 fn_bid_t
@@ -48,6 +70,7 @@ fn_ccysym_bid(const char *str, size_t len)
 {
 	const char *sp = str;
 	const char *const ep = str + len;
+	ccy_t state = UNK;
 
 	switch (*sp++) {
 	case 'A':
@@ -83,7 +106,7 @@ fn_ccysym_bid(const char *str, size_t len)
 		return fn_nul_bid;
 	}
 
-	return (fn_bid_t){FINNER_CCY, ep - sp};
+	return (fn_bid_t){FINNER_CCY, ep - sp, state};
 }
 
 /* ccysym.c ends here */
