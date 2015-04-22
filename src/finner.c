@@ -55,6 +55,14 @@
 #include "collector.h"
 #include "nifty.h"
 
+struct co_terms_retval_s;
+
+struct ctx_s {
+	bool allp;
+	size_t abs;
+	void(*prntf)(const struct ctx_s*, const struct co_terms_retval_s*);
+};
+
 _Static_assert(
 	sizeof(fn_bid_t) == 2U * sizeof(uintptr_t),
 	"possible size problem with fn_bid_t");
@@ -502,7 +510,7 @@ co_tcoll(const struct co_terms_retval_s *tb)
 
 /* terminators */
 static void
-co_textr(const struct co_terms_retval_s *ta, bool allp)
+co_textr(const struct ctx_s *ctx, const struct co_terms_retval_s *ta)
 {
 	for (size_t i = 0U; i < ta->nannos; i++) {
 		const extent_t x = ta->annos[i].x;
@@ -510,7 +518,7 @@ co_textr(const struct co_terms_retval_s *ta, bool allp)
 		const char *tp = ta->base + x.sta;
 		const size_t tz = x.end - x.sta;
 
-		if (b.bid || allp) {
+		if (b.bid || ctx->allp) {
 			if (b.bid < FINNER_NTOKENS) {
 				/* primitive i.e. non-collective token */
 				fwrite(tp, sizeof(*tp), tz, stdout);
@@ -531,14 +539,15 @@ co_textr(const struct co_terms_retval_s *ta, bool allp)
 				fwrite(pp, sizeof(*pp), pz, stdout);
 			}
 			fprintf(stdout, "\t%s\t[%zu,%zu)\n",
-				finner_bidstr[b.bid], x.sta, x.end);
+				finner_bidstr[b.bid],
+				x.sta + ctx->abs, x.end + ctx->abs);
 		}
 	}
 	return;
 }
 
 static void
-co_tanno(const struct co_terms_retval_s *ta, bool UNUSED(allp))
+co_tanno(const struct ctx_s *UNUSED(ctx), const struct co_terms_retval_s *ta)
 {
 	/* check output device */
 	const int colourp = isatty(STDOUT_FILENO);
@@ -573,16 +582,12 @@ co_tanno(const struct co_terms_retval_s *ta, bool UNUSED(allp))
 }
 
 
-struct ctx_s {
-	bool allp;
-	void(*prntf)(const struct co_terms_retval_s *ta, bool allp);
-};
-
 static int
 proc1(const struct ctx_s *ctx, const char *fn)
 {
 	const struct co_snarf_retval_s *rd = NULL;
 	const struct co_terms_retval_s *tv = NULL;
+	struct ctx_s ctxcpy = *ctx;
 	int rc = 0;
 	int fd;
 
@@ -594,7 +599,8 @@ proc1(const struct ctx_s *ctx, const char *fn)
 		return -1;
 	}
 
-	for (ssize_t npr = 0;; npr = tv->bbox.end) {
+	ctxcpy.abs = 0U;
+	for (ssize_t npr = 0;; ctxcpy.abs += (npr = tv->bbox.end)) {
 		if ((rd = co_snarf(fd, npr)) == NULL) {
 			break;
 		} else if ((tv = co_terms(rd)) == NULL) {
@@ -603,7 +609,7 @@ proc1(const struct ctx_s *ctx, const char *fn)
 			break;
 		} else if ((tv = co_tcoll(tv)) == NULL) {
 			break;
-		} else if (ctx->prntf(tv, ctx->allp), 0) {
+		} else if (ctx->prntf(&ctxcpy, tv), 0) {
 			break;
 		}
 	}
