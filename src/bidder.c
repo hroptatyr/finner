@@ -62,7 +62,6 @@ const char *const finner_bidstr[FINNER_NTAGS] = {
 	[FINNER_NUM] = "num",
 	[FINNER_WKN] = "wkn",
 	[FINNER_DATE] = "date",
-	[FINNER_CCYSYM] = "ccysym",
 
 	/* collectors */
 	[FINNER_AMT] = "amt",

@@ -41,6 +41,30 @@
 #include "nifty.h"
 #include "ccysym.h"
 
+typedef enum {
+	UNK,
+	AUD,
+	CAD,
+	DEM,
+	EUR,
+	GBP,
+	JPY,
+	SGD,
+	USD,
+	NCCY
+} ccy_t;
+
+static const char *const ccy[] = {
+	[AUD] = "AUD",
+	[CAD] = "CAD",
+	[DEM] = "DEM",
+	[EUR] = "EUR",
+	[GBP] = "GBP",
+	[JPY] = "JPY",
+	[SGD] = "SGD",
+	[USD] = "USD",
+};
+
 
 /* class implementation */
 fn_bid_t
@@ -48,11 +72,20 @@ fn_ccysym_bid(const char *str, size_t len)
 {
 	const char *sp = str;
 	const char *const ep = str + len;
+	ccy_t state = UNK;
 
 	switch (*sp++) {
 	case 'A':
+		state = AUD;
+		goto ACS;
 	case 'C':
-		/* AUD, CAD */
+		state = CAD;
+		goto ACS;
+	case 'S':
+		state = SGD;
+		goto ACS;
+	ACS:
+		/* AUD, CAD, SGD */
 		if (sp >= ep || *sp++ != '$') {
 			return fn_nul_bid;
 		}
@@ -62,28 +95,40 @@ fn_ccysym_bid(const char *str, size_t len)
 		if (sp >= ep || *sp++ != 'M') {
 			return fn_nul_bid;
 		}
+		state = DEM;
 		break;
 	case '$':
 		/* USD */
+		state = USD;
 		break;
 	case '\xc2':
 		/* GBP, JPY */
-		if (sp >= ep || (*sp != '\xa3' && *sp != '\xa5')) {
+		if (sp >= ep) {
 			return fn_nul_bid;
 		}
-		sp++;
+		switch (*sp++) {
+		case '\xa3':
+			state = GBP;
+			break;
+		case '\xa5':
+			state = JPY;
+			break;
+		default:
+			return fn_nul_bid;
+		}
 		break;
 	case '\xe2':
 		/* EUR? */
 		if (sp + 1U >= ep || *sp++ != '\x82' || *sp++ != '\xac') {
 			return fn_nul_bid;
 		}
+		state = EUR;
 		break;
 	default:
 		return fn_nul_bid;
 	}
 
-	return (fn_bid_t){FINNER_CCYSYM, ep - sp};
+	return (fn_bid_t){FINNER_CCY, ep - sp, state};
 }
 
 /* ccysym.c ends here */
