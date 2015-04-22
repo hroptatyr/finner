@@ -511,7 +511,25 @@ co_textr(const struct co_terms_retval_s *ta, bool allp)
 		const size_t tz = x.end - x.sta;
 
 		if (b.bid || allp) {
-			fwrite(tp, sizeof(*tp), tz, stdout);
+			if (b.bid < FINNER_NTOKENS) {
+				/* primitive i.e. non-collective token */
+				fwrite(tp, sizeof(*tp), tz, stdout);
+			} else if (i + b.span < ta->nannos) {
+				for (size_t j = 1U; j < b.span; j++) {
+					const extent_t px = ta->annos[i + j].x;
+					const char *pp = ta->base + px.sta;
+					const size_t pz = px.end - px.sta;
+
+					fwrite(pp, sizeof(*pp), pz, stdout);
+					fputc(' ', stdout);
+				}
+				/* write final one */
+				const extent_t px = ta->annos[i + b.span].x;
+				const char *pp = ta->base + px.sta;
+				const size_t pz = px.end - px.sta;
+
+				fwrite(pp, sizeof(*pp), pz, stdout);
+			}
 			fprintf(stdout, "\t%s\t[%zu,%zu)\n",
 				finner_bidstr[b.bid], x.sta, x.end);
 		}
