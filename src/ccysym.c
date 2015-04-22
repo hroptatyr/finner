@@ -49,6 +49,7 @@ typedef enum {
 	EUR,
 	GBP,
 	JPY,
+	SGD,
 	USD,
 	NCCY
 } ccy_t;
@@ -60,6 +61,7 @@ static const char *const ccy[] = {
 	[EUR] = "EUR",
 	[GBP] = "GBP",
 	[JPY] = "JPY",
+	[SGD] = "SGD",
 	[USD] = "USD",
 };
 
@@ -75,7 +77,8 @@ fn_ccysym_bid(const char *str, size_t len)
 	switch (*sp++) {
 	case 'A':
 	case 'C':
-		/* AUD, CAD */
+	case 'S':
+		/* AUD, CAD, SGD */
 		if (sp >= ep || *sp++ != '$') {
 			return fn_nul_bid;
 		}
