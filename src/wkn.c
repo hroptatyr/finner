@@ -67,7 +67,11 @@ fn_wkn_bid(const char *str, size_t len)
 		}
 	}
 	if (!ndigits) {
-		return fn_nul_bid;
+		/* check for CBKTLR und CBKBZR */
+		if (str[0U] != 'C' ||
+		    (memcmp(str, "CBKTLR", 6U) && memcmp(str, "CBKBZR", 6U))) {
+			return fn_nul_bid;
+		}
 	}
 
 	/* bid bid bid */
