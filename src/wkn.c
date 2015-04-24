@@ -60,6 +60,10 @@ fn_wkn_bid(const char *str, size_t len)
 			return fn_nul_bid;
 		} else if (str[i] > 'Z') {
 			return fn_nul_bid;
+		} else if (str[i] == 'I') {
+			return fn_nul_bid;
+		} else if (str[i] == 'O') {
+			return fn_nul_bid;
 		}
 	}
 	if (!ndigits) {
