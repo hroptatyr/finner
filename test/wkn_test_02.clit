@@ -1,0 +1,6 @@
+#!/usr/bin/clitoris  ## -*- shell-script -*-
+
+$ finner anno "${srcdir}/wkn_test_01.txt"
+This WKN A10A0A/wkn and this one (555750/wkn) are both different from: CBKTLR/wkn.
+And of course AI0A0A is not one, but CBKBZR/wkn is.
+$

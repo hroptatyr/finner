@@ -1,0 +1,8 @@
+#!/usr/bin/clitoris  ## -*- shell-script -*-
+
+$ finner extr "${srcdir}/wkn_test_01.txt"
+A10A0A	wkn	[9,15)
+555750	wkn	[30,36)
+CBKTLR	wkn	[63,69)
+CBKBZR	wkn	[108,114)
+$
