@@ -24,4 +24,8 @@ CLEANFILES = $(check_PROGRAMS)
 include clitoris.am
 AM_CLIT_LOG_FLAGS = --builddir $(top_builddir)/src --verbose --keep-going
 
+TESTS += wkn_test_01.clit
+TESTS += wkn_test_02.clit
+EXTRA_DIST += wkn_test_01.txt
+
 ## Makefile.am ends here
