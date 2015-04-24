@@ -60,10 +60,18 @@ fn_wkn_bid(const char *str, size_t len)
 			return fn_nul_bid;
 		} else if (str[i] > 'Z') {
 			return fn_nul_bid;
+		} else if (str[i] == 'I') {
+			return fn_nul_bid;
+		} else if (str[i] == 'O') {
+			return fn_nul_bid;
 		}
 	}
 	if (!ndigits) {
-		return fn_nul_bid;
+		/* check for CBKTLR und CBKBZR */
+		if (str[0U] != 'C' ||
+		    (memcmp(str, "CBKTLR", 6U) && memcmp(str, "CBKBZR", 6U))) {
+			return fn_nul_bid;
+		}
 	}
 
 	/* bid bid bid */
