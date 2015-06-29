@@ -6,9 +6,6 @@ TL;DR: Like Apache OpenNLP (TokenNameFinder) but faster and actually working.
 Detects all kinds of entities in financial news texts, like ISINs,
 FIGIs (BBGIDs), monetary values, date and time stamps, etc.
 
-Unlike the NERs from the big NLP packages this is rule based and hence
-the false positive rate is low while the false negative rate is zero.
-
 
 Red tape
 --------
@@ -17,6 +14,18 @@ Red tape
 + Project: <https://www.fresse.org/finner/>
 + Downloads: <https://github.com/hroptatyr/finner/releases>
 + Issues: <https://github.com/hroptatyr/finner/issues>
+
+
+Motivation
+----------
+
+Unlike the NERs from the big NLP packages this is rule based and hence
+the false positive rate is low while the false negative rate is zero.
+
+Instead of accounting for every edge case finner aims to cover the top
+95% of use cases and is meant to be part of a booster setup.  This way
+a bunch of heuristics, each one mediocre in coverage and accuracy, can
+outperform a well-trained single (but more complex) model.
 
 
 Technicalities
