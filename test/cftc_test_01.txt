@@ -1,0 +1,38 @@
+
+ VIX FUTURES - CBOE FUTURES EXCHANGE                                                                     Code-1170E1
+Commitments of Traders - Futures Only, February 5, 2008                
+-------------------------------------------------------------------------------------------------------------------
+     :   Total  :                        Reportable Positions                                :   Nonreportable
+     :----------------------------------------------------------------------------------------     Positions
+     :   Open   :           Non-Commercial       :     Commercial      :       Total         :
+     : Interest :   Long   :  Short   : Spreading:   Long   :  Short   :   Long   :  Short   :   Long   :  Short
+-------------------------------------------------------------------------------------------------------------------
+     :          : ($1000 X INDEX)                                                            :
+     :          :                                                                            :
+All  :    55,094:     5,378     23,610      2,619     40,500     22,213     48,497     48,442:     6,597      6,652
+Old  :    55,094:     5,378     23,610      2,619     40,500     22,213     48,497     48,442:     6,597      6,652
+Other:         0:         0          0          0          0          0          0          0:         0          0
+     :          :                                                                            :
+     :          :          Changes in Commitments from: January 29, 2008                     :
+     :     1,080:      -172        911       -353        110     -1,052       -415       -494:     1,495      1,574
+     :          :                                                                            :
+     :          :    Percent of Open Interest Represented by Each Category of Trader         :
+All  :     100.0:       9.8       42.9        4.8       73.5       40.3       88.0       87.9:      12.0       12.1
+Old  :     100.0:       9.8       42.9        4.8       73.5       40.3       88.0       87.9:      12.0       12.1
+Other:     100.0:       0.0        0.0        0.0        0.0        0.0        0.0        0.0:       0.0        0.0
+     :          :                                                                            :
+     :# Traders :              Number of Traders in Each Category                            :
+All  :        28:         5         13          7         10          6         22         19:
+Old  :        28:         5         13          7         10          6         22         19:
+Other:         0:         0          0          0          0          0          0          0:
+     :----------------------------------------------------------------------------------------------------
+     :             Percent of Open Interest Held by the Indicated Number of the Largest Traders
+     :                          By Gross Position                       By Net Position
+     :               4 or Less Traders     8 or Less Traders     4 or Less Traders     8 or Less Traders
+     :                 Long:     Short       Long      Short:      Long      Short       Long      Short
+     :----------------------------------------------------------------------------------------------------
+All  :                 73.8       66.0       81.1       78.5       50.5       37.7       53.1       48.3
+Old  :                 73.8       66.0       81.1       78.5       50.5       37.7       53.1       48.3
+Other:                  0.0        0.0        0.0        0.0        0.0        0.0        0.0        0.0
+ 
+
