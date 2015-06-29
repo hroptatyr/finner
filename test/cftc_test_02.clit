@@ -1,0 +1,41 @@
+#!/usr/bin/clitoris  ## -*- shell-script -*-
+
+$ finner anno "${srcdir}/cftc_test_01.txt"
+
+ VIX FUTURES - CBOE FUTURES EXCHANGE                                                                     Code-1170E1
+Commitments of Traders - Futures Only, February 5/num, 2008/num                
+-------------------------------------------------------------------------------------------------------------------
+     :   Total  :                        Reportable Positions                                :   Nonreportable
+     :----------------------------------------------------------------------------------------     Positions
+     :   Open   :           Non-Commercial       :     Commercial      :       Total         :
+     : Interest :   Long   :  Short   : Spreading:   Long   :  Short   :   Long   :  Short   :   Long   :  Short
+-------------------------------------------------------------------------------------------------------------------
+     :          : ($1000/amt X INDEX)                                                            :
+     :          :                                                                            :
+All  :    55,094/num:     5,378/num     23,610/num      2,619/num     40,500/num     22,213/num     48,497/num     48,442/num:     6,597/num      6,652/num
+Old  :    55,094/num:     5,378/num     23,610/num      2,619/num     40,500/num     22,213/num     48,497/num     48,442/num:     6,597/num      6,652/num
+Other:         0:         0          0          0          0          0          0          0:         0          0
+     :          :                                                                            :
+     :          :          Changes in Commitments from: January 29/num, 2008/num                     :
+     :     1,080/num:      -172/num        911/num       -353/num        110/num     -1,052/num       -415/num       -494/num:     1,495/num      1,574/num
+     :          :                                                                            :
+     :          :    Percent of Open Interest Represented by Each Category of Trader         :
+All  :     100.0/num:       9.8/num       42.9/num        4.8/num       73.5/num       40.3/num       88.0/num       87.9/num:      12.0/num       12.1/num
+Old  :     100.0/num:       9.8/num       42.9/num        4.8/num       73.5/num       40.3/num       88.0/num       87.9/num:      12.0/num       12.1/num
+Other:     100.0/num:       0.0/num        0.0/num        0.0/num        0.0/num        0.0/num        0.0/num        0.0/num:       0.0/num        0.0/num
+     :          :                                                                            :
+     :# Traders :              Number of Traders in Each Category                            :
+All  :        28/num:         5/num         13/num          7/num         10/num          6/num         22/num         19/num:
+Old  :        28/num:         5/num         13/num          7/num         10/num          6/num         22/num         19/num:
+Other:         0:         0          0          0          0          0          0          0:
+     :----------------------------------------------------------------------------------------------------
+     :             Percent of Open Interest Held by the Indicated Number of the Largest Traders
+     :                          By Gross Position                       By Net Position
+     :               4/num or Less Traders     8/num or Less Traders     4/num or Less Traders     8/num or Less Traders
+     :                 Long:     Short       Long      Short:      Long      Short       Long      Short
+     :----------------------------------------------------------------------------------------------------
+All  :                 73.8/num       66.0/num       81.1/num       78.5/num       50.5/num       37.7/num       53.1/num       48.3/num
+Old  :                 73.8/num       66.0/num       81.1/num       78.5/num       50.5/num       37.7/num       53.1/num       48.3/num
+Other:                  0.0/num        0.0/num        0.0/num        0.0/num        0.0/num        0.0/num        0.0/num        0.0/num
+ 
+$

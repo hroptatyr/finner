@@ -28,4 +28,8 @@ TESTS += wkn_test_01.clit
 TESTS += wkn_test_02.clit
 EXTRA_DIST += wkn_test_01.txt
 
+TESTS += cftc_test_01.clit
+TESTS += cftc_test_02.clit
+EXTRA_DIST += cftc_test_01.txt
+
 ## Makefile.am ends here
