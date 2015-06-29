@@ -512,13 +512,19 @@ co_tcoll(const struct co_terms_retval_s *tb)
 static void
 co_textr(const struct ctx_s *ctx, const struct co_terms_retval_s *ta)
 {
+	const extent_t bbox = ta->bbox;
+
 	for (size_t i = 0U; i < ta->nannos; i++) {
 		const extent_t x = ta->annos[i].x;
 		const fn_bid_t b = ta->annos[i].b;
 		const char *tp = ta->base + x.sta;
 		const size_t tz = x.end - x.sta;
 
-		if (b.bid || ctx->allp) {
+		if (UNLIKELY(x.sta >= bbox.end)) {
+			/* stuff beyond the bounding box needs to be fed
+			 * into the buffer again in the next iteration */
+			break;
+		} else if (b.bid || ctx->allp) {
 			if (b.bid < FINNER_NTOKENS) {
 				/* primitive i.e. non-collective token */
 				fwrite(tp, sizeof(*tp), tz, stdout);
@@ -551,6 +557,7 @@ co_tanno(const struct ctx_s *UNUSED(ctx), const struct co_terms_retval_s *ta)
 {
 	/* check output device */
 	const int colourp = isatty(STDOUT_FILENO);
+	const extent_t bbox = ta->bbox;
 	size_t last = 0U;
 
 	for (size_t i = 0U; i < ta->nannos; i++) {
@@ -558,8 +565,11 @@ co_tanno(const struct ctx_s *UNUSED(ctx), const struct co_terms_retval_s *ta)
 		const fn_bid_t b = ta->annos[i].b;
 		const size_t this = x.sta;
 
-		/* only annotate actual tokens */
-		if (b.bid && this > last) {
+		if (UNLIKELY(x.sta >= bbox.end)) {
+			/* stuff beyond the bounding box needs to be fed
+			 * into the buffer again in the next iteration */
+			break;
+		} else if (b.bid && this > last) {
 			/* print from last streak to here */
 			const size_t llen = this - last;
 			const size_t tlen = x.end - this;
