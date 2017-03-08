@@ -29,6 +29,7 @@ libbidder_la_SOURCES += figi.c figi.h
 libbidder_la_SOURCES += isin.c isin.h
 EXTRA_libbidder_la_SOURCES += isin-cc.ccl
 BUILT_SOURCES += isin-cc.c
+libbidder_la_SOURCES += lei.c lei.h
 libbidder_la_SOURCES += cusip.c cusip.h
 libbidder_la_SOURCES += sedol.c sedol.h
 libbidder_la_SOURCES += ccy.c ccy.h
