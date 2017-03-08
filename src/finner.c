@@ -569,7 +569,7 @@ co_tanno(const struct ctx_s *UNUSED(ctx), const struct co_terms_retval_s *ta)
 			/* stuff beyond the bounding box needs to be fed
 			 * into the buffer again in the next iteration */
 			break;
-		} else if (b.bid && this > last) {
+		} else if (b.bid && this >= last) {
 			/* print from last streak to here */
 			const size_t llen = this - last;
 			const size_t tlen = x.end - this;
