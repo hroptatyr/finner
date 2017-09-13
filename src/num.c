@@ -71,6 +71,7 @@ fn_num_bid(const char *str, size_t len)
 		/* might be `.' or `,' */
 		switch (*sp++) {
 		case '.':
+		dot:
 			/* only allow digits from now on */
 			for (; sp < ep; sp++) {
 				if (!(*sp >= '0' && *sp <= '9')) {
@@ -88,9 +89,13 @@ fn_num_bid(const char *str, size_t len)
 			}
 			if (sp >= ep) {
 				break;
-			} else if (*sp++ == ',') {
+			} else if (*sp == ',') {
 				/* ah, another comma group */
+				sp++;
 				goto rechk;
+			} else if (*sp == '.') {
+				sp++;
+				goto dot;
 			}
 			/* otherwise it's bullshit */
 			break;
