@@ -39,6 +39,7 @@ libbidder_la_SOURCES += fxpair.c fxpair.h
 EXTRA_libbidder_la_SOURCES += fxpair-cc.ccl
 BUILT_SOURCES += fxpair-cc.c
 libbidder_la_SOURCES += num.c num.h
+libbidder_la_SOURCES += unit-1.c unit-1.h
 libbidder_la_SOURCES += wkn.c wkn.h
 libbidder_la_SOURCES += date.c date.h
 libbidder_la_SOURCES += ccysym.c ccysym.h

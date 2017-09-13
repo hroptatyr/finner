@@ -1,6 +1,6 @@
-/*** bidder.c -- determine token types
+/*** unit-1.c -- unitless factors
  *
- * Copyright (C) 2014-2015 Sebastian Freundt
+ * Copyright (C) 2014-2017 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
@@ -34,70 +34,96 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  ***/
-#if defined HAVE_CONFIG_H
-# include "config.h"
-#endif	/* HAVE_CONFIG_H */
-#include "bidder.h"
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <assert.h>
 #include "nifty.h"
-/* bidders */
-#include "figi.h"
-#include "isin.h"
-#include "cusip.h"
-#include "sedol.h"
-#include "ccy.h"
-#include "fxpair.h"
-#include "num.h"
-#include "wkn.h"
-#include "date.h"
-#include "ccysym.h"
-#include "lei.h"
 #include "unit-1.h"
 
-const char *const finner_bidstr[FINNER_NTAGS] = {
-	[FINNER_TERM] = "term",
-	[FINNER_FIGI] = "figi",
-	[FINNER_ISIN] = "isin",
-	[FINNER_LEI] = "lei",
-	[FINNER_CUSIP] = "cusip",
-	[FINNER_SEDOL] = "sedol",
-	[FINNER_CCY] = "ccy",
-	[FINNER_FXPAIR] = "fxpair",
-	[FINNER_NUM] = "num",
-	[FINNER_WKN] = "wkn",
-	[FINNER_DATE] = "date",
-	[FINNER_UNIT_1] = "unit(1)",
-
-	/* collectors */
-	[FINNER_AMT] = "amt",
-};
+typedef enum {
+	UNK,
+	HUNDRED,
+	THOUSAND,
+	MILLION,
+	BILLION,
+	TRILLION,
+	PERCENT,
+	BPOINT,
+} unit_1_t;
 
 
-/* public api */
+/* class implementation */
 fn_bid_t
-finner_bid(const char *str, size_t len)
+fn_unit_1_bid(const char *str, size_t len)
 {
-#define CHECK(bidder)					\
-	with (fn_bid_t x = bidder(str, len)) {		\
-		if (x.bid) {				\
-			return x;			\
-		}					\
-	}
+	const char *sp = str;
+	const char *const ep = str + len;
+	unit_1_t guess = UNK;
 
-	/* start the bidding */
-	CHECK(fn_figi_bid);
-	CHECK(fn_isin_bid);
-	CHECK(fn_lei_bid);
-	CHECK(fn_cusip_bid);
-	CHECK(fn_sedol_bid);
-	CHECK(fn_ccy_bid);
-	CHECK(fn_fxpair_bid);
-	CHECK(fn_date_bid);
-	/* high risk stuff last */
-	CHECK(fn_wkn_bid);
-	CHECK(fn_num_bid);
-	CHECK(fn_ccysym_bid);
-	CHECK(fn_unit_1_bid);
-	return fn_nul_bid;
+	switch (*sp) {
+	case '%':
+		guess = PERCENT;
+		sp++;
+		break;
+	case 'p':
+		if (++sp >= ep) {
+			/* don't worry */
+			break;
+		} else if (sp + 6U > ep || memcmp(sp, "ercent", 6U)) {
+			/* not percent */
+			break;
+		}
+		/* otherwise use him */
+		sp += 6U;
+		guess = PERCENT;
+		break;
+
+	case 'b':
+		if (++sp >= ep) {
+			/* it's any bullshit */
+			break;
+		}
+		switch (*sp) {
+		case 'p':
+			guess = BPOINT;
+			break;
+		case 'n':
+			guess = BILLION;
+			break;
+		default:
+			guess = BILLION;
+			goto illion;
+		}
+		sp++;
+		break;
+	case 'm':
+		guess = MILLION;
+		if (++sp >= ep) {
+			/* it's 11m or so */
+			break;
+		}
+		goto illion;
+	case 't':
+		if (++sp >= ep || *sp != 'r') {
+			/* it's nothing */
+			break;
+		}
+		guess = TRILLION;
+		goto illion;
+
+	illion:
+		if (sp + 6U > ep || memcmp(sp, "illion", 6U)) {
+			/* nope, not an illion of any kind */
+			guess = UNK;
+		}
+		sp += 6U;
+		break;
+	}
+	if (guess == UNK) {
+		return fn_nul_bid;
+	}
+	return (fn_bid_t){FINNER_UNIT_1, ep - sp, guess};
 }
 
-/* bidder.c ends here */
+/* unit-1.c ends here */
