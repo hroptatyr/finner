@@ -74,7 +74,7 @@ fn_num_bid(const char *str, size_t len)
 			/* only allow digits from now on */
 			for (; sp < ep; sp++) {
 				if (!(*sp >= '0' && *sp <= '9')) {
-					return fn_nul_bid;
+					break;
 				}
 			}
 			break;
@@ -93,11 +93,13 @@ fn_num_bid(const char *str, size_t len)
 				goto rechk;
 			}
 			/* otherwise it's bullshit */
+			break;
 		default:
-			return fn_nul_bid;
+			sp--;
+			break;
 		}
 	}
-	return (fn_bid_t){FINNER_NUM};
+	return (fn_bid_t){FINNER_NUM, ep - sp};
 }
 
 /* num.c ends here */
