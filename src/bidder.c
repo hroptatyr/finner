@@ -51,6 +51,7 @@
 #include "date.h"
 #include "ccysym.h"
 #include "lei.h"
+#include "unit-1.h"
 
 const char *const finner_bidstr[FINNER_NTAGS] = {
 	[FINNER_TERM] = "term",
@@ -64,6 +65,7 @@ const char *const finner_bidstr[FINNER_NTAGS] = {
 	[FINNER_NUM] = "num",
 	[FINNER_WKN] = "wkn",
 	[FINNER_DATE] = "date",
+	[FINNER_UNIT_1] = "unit(1)",
 
 	/* collectors */
 	[FINNER_AMT] = "amt",
@@ -94,6 +96,7 @@ finner_bid(const char *str, size_t len)
 	CHECK(fn_wkn_bid);
 	CHECK(fn_num_bid);
 	CHECK(fn_ccysym_bid);
+	CHECK(fn_unit_1_bid);
 	return fn_nul_bid;
 }
 

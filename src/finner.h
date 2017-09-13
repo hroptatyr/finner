@@ -50,6 +50,7 @@ typedef enum {
 	FINNER_NUM,
 	FINNER_WKN,
 	FINNER_DATE,
+	FINNER_UNIT_1,
 	FINNER_NTOKENS,
 
 	/* collections here */

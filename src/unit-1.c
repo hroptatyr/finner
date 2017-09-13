@@ -1,6 +1,6 @@
-/*** num.c -- checker for numbers
+/*** unit-1.c -- unitless factors
  *
- * Copyright (C) 2014-2015 Sebastian Freundt
+ * Copyright (C) 2014-2017 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
@@ -39,72 +39,91 @@
 #include <stdio.h>
 #include <assert.h>
 #include "nifty.h"
-#include "num.h"
+#include "unit-1.h"
+
+typedef enum {
+	UNK,
+	HUNDRED,
+	THOUSAND,
+	MILLION,
+	BILLION,
+	TRILLION,
+	PERCENT,
+	BPOINT,
+} unit_1_t;
 
 
 /* class implementation */
 fn_bid_t
-fn_num_bid(const char *str, size_t len)
+fn_unit_1_bid(const char *str, size_t len)
 {
 	const char *sp = str;
 	const char *const ep = str + len;
+	unit_1_t guess = UNK;
 
-	if (UNLIKELY(*sp == '-')) {
-		/* allow leading `-' */
+	switch (*sp) {
+	case '%':
+		guess = PERCENT;
 		sp++;
-	}
-	if (*sp == '0') {
-		/* demand decimal dot now */
-		if (*++sp != '.') {
-			return fn_nul_bid;
-		}
-	} else if (!(*sp >= '1' && *sp <= '9')) {
-		return fn_nul_bid;
-	}
-	/* only digits for now */
-	for (sp++; sp < ep; sp++) {
-		if (!(*sp >= '0' && *sp <= '9')) {
+		break;
+	case 'p':
+		if (++sp >= ep) {
+			/* don't worry */
+			break;
+		} else if (sp + 6U > ep || memcmp(sp, "ercent", 6U)) {
+			/* not percent */
 			break;
 		}
-	}
-	if (sp < ep) {
-		/* might be `.' or `,' */
-		switch (*sp++) {
-		case '.':
-		dot:
-			/* only allow digits from now on */
-			for (; sp < ep; sp++) {
-				if (!(*sp >= '0' && *sp <= '9')) {
-					break;
-				}
-			}
+		/* otherwise use him */
+		sp += 6U;
+		guess = PERCENT;
+		break;
+
+	case 'b':
+		if (++sp >= ep) {
+			/* it's any bullshit */
 			break;
-		case ',':
-		rechk:
-			/* allow digits */
-			for (size_t i = 3U; i && sp < ep; sp++, i--) {
-				if (!(*sp >= '0' && *sp <= '9')) {
-					return fn_nul_bid;
-				}
-			}
-			if (sp >= ep) {
-				break;
-			} else if (*sp == ',') {
-				/* ah, another comma group */
-				sp++;
-				goto rechk;
-			} else if (*sp == '.') {
-				sp++;
-				goto dot;
-			}
-			/* otherwise it's bullshit */
+		}
+		switch (*sp) {
+		case 'p':
+			guess = BPOINT;
+			break;
+		case 'n':
+			guess = BILLION;
 			break;
 		default:
-			sp--;
+			guess = BILLION;
+			goto illion;
+		}
+		sp++;
+		break;
+	case 'm':
+		guess = MILLION;
+		if (++sp >= ep) {
+			/* it's 11m or so */
 			break;
 		}
+		goto illion;
+	case 't':
+		if (++sp >= ep || *sp != 'r') {
+			/* it's nothing */
+			break;
+		}
+		guess = TRILLION;
+		goto illion;
+
+	illion:
+		if (sp + 6U > ep || memcmp(sp, "illion", 6U)) {
+			/* nope, not an illion of any kind */
+			guess = UNK;
+		}
+		sp += 6U;
+		break;
 	}
-	return (fn_bid_t){FINNER_NUM, ep - sp};
+	if (guess == UNK) {
+		return fn_nul_bid;
+	}
+	return (fn_bid_t){FINNER_UNIT_1, ep - sp, guess};
 }
 
-/* num.c ends here */
+/* unit-1.c ends here */

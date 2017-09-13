@@ -1,6 +1,6 @@
-/*** num.c -- checker for numbers
+/*** unit-1.h -- unitless factors
  *
- * Copyright (C) 2014-2015 Sebastian Freundt
+ * Copyright (C) 2014-2017 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
@@ -34,77 +34,11 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  ***/
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <assert.h>
-#include "nifty.h"
-#include "num.h"
+#if !defined INCLUDED_unit_1_h_
+#define INCLUDED_unit_1_h_
 
-
-/* class implementation */
-fn_bid_t
-fn_num_bid(const char *str, size_t len)
-{
-	const char *sp = str;
-	const char *const ep = str + len;
+#include "bidder.h"
 
-	if (UNLIKELY(*sp == '-')) {
-		/* allow leading `-' */
-		sp++;
-	}
-	if (*sp == '0') {
-		/* demand decimal dot now */
-		if (*++sp != '.') {
-			return fn_nul_bid;
-		}
-	} else if (!(*sp >= '1' && *sp <= '9')) {
-		return fn_nul_bid;
-	}
-	/* only digits for now */
-	for (sp++; sp < ep; sp++) {
-		if (!(*sp >= '0' && *sp <= '9')) {
-			break;
-		}
-	}
-	if (sp < ep) {
-		/* might be `.' or `,' */
-		switch (*sp++) {
-		case '.':
-		dot:
-			/* only allow digits from now on */
-			for (; sp < ep; sp++) {
-				if (!(*sp >= '0' && *sp <= '9')) {
-					break;
-				}
-			}
-			break;
-		case ',':
-		rechk:
-			/* allow digits */
-			for (size_t i = 3U; i && sp < ep; sp++, i--) {
-				if (!(*sp >= '0' && *sp <= '9')) {
-					return fn_nul_bid;
-				}
-			}
-			if (sp >= ep) {
-				break;
-			} else if (*sp == ',') {
-				/* ah, another comma group */
-				sp++;
-				goto rechk;
-			} else if (*sp == '.') {
-				sp++;
-				goto dot;
-			}
-			/* otherwise it's bullshit */
-			break;
-		default:
-			sp--;
-			break;
-		}
-	}
-	return (fn_bid_t){FINNER_NUM, ep - sp};
-}
+extern fn_bid_t fn_unit_1_bid(const char *str, size_t len);
 
-/* num.c ends here */
+#endif	/* INCLUDED_unit_1_h_ */
