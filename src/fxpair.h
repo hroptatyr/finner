@@ -40,5 +40,6 @@
 #include "bidder.h"
 
 extern fn_bid_t fn_fxpair_bid(const char *str, size_t len);
+extern const char *fn_fxpair_prs(uintptr_t);
 
 #endif	/* INCLUDED_fxpair_h_ */

@@ -45,9 +45,14 @@
 typedef fn_bid_t(*fn_bid_f)(const char *str, size_t len);
 
 /**
+ * State printer class. */
+typedef const char*(*fn_prs_f)(uintptr_t);
+
+/**
  * Convenience routine to determine the token type. */
 extern fn_bid_t finner_bid(const char *str, size_t len);
 
 extern const char *const finner_bidstr[FINNER_NTAGS];
+extern fn_prs_f finner_statestr[FINNER_NTAGS];
 
 #endif	/* INCLUDED_bidder_h_ */

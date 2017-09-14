@@ -49,6 +49,8 @@
 fn_bid_t
 fn_ccy_bid(const char *str, size_t len)
 {
+	uintptr_t s = 0U;
+
 	/* common cases first */
 	if (len < 3U) {
 		return fn_nul_bid;
@@ -57,9 +59,17 @@ fn_ccy_bid(const char *str, size_t len)
 	} else if (len > 3U && ((unsigned char)(str[3U] ^ '0')) >= 10U) {
 		return fn_nul_bid;
 	}
-
+	memcpy(&s, str, 3U);
 	/* bid just any number really */
-	return (fn_bid_t){FINNER_CCY, len - 3U};
+	return (fn_bid_t){FINNER_CCY, len - 3U, s};
+}
+
+const char*
+fn_ccy_prs(uintptr_t state)
+{
+	static char buf[4U];
+	memcpy(buf, &state, sizeof(buf));
+	return buf;
 }
 
 /* ccy.c ends here */

@@ -40,5 +40,6 @@
 #include "collector.h"
 
 extern fn_bid_t fn_amt_collect(const struct anno_s *av, size_t len);
+extern const char *fn_amt_prs(uintptr_t);
 
 #endif	/* INCLUDED_amt_h_ */

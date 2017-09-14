@@ -52,6 +52,7 @@
 #include "ccysym.h"
 #include "lei.h"
 #include "unit-1.h"
+#include "amt.h"
 
 const char *const finner_bidstr[FINNER_NTAGS] = {
 	[FINNER_TERM] = "term",
@@ -65,10 +66,19 @@ const char *const finner_bidstr[FINNER_NTAGS] = {
 	[FINNER_NUM] = "num",
 	[FINNER_WKN] = "wkn",
 	[FINNER_DATE] = "date",
-	[FINNER_UNIT_1] = "unit(1)",
+	[FINNER_UNIT_1] = "unit",
 
 	/* collectors */
 	[FINNER_AMT] = "amt",
+};
+
+fn_prs_f finner_statestr[FINNER_NTAGS] = {
+	[FINNER_FXPAIR] = fn_fxpair_prs,
+	[FINNER_CCY] = fn_ccy_prs,
+	[FINNER_UNIT_1] = fn_unit_1_prs,
+
+	/* collectors */
+	[FINNER_AMT] = fn_amt_prs,
 };
 
 
@@ -89,8 +99,8 @@ finner_bid(const char *str, size_t len)
 	CHECK(fn_lei_bid);
 	CHECK(fn_cusip_bid);
 	CHECK(fn_sedol_bid);
-	CHECK(fn_ccy_bid);
 	CHECK(fn_fxpair_bid);
+	CHECK(fn_ccy_bid);
 	CHECK(fn_date_bid);
 	/* high risk stuff last */
 	CHECK(fn_wkn_bid);
