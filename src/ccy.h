@@ -40,5 +40,6 @@
 #include "bidder.h"
 
 extern fn_bid_t fn_ccy_bid(const char *str, size_t len);
+extern const char *fn_ccy_prs(uintptr_t);
 
 #endif	/* INCLUDED_ccy_h_ */

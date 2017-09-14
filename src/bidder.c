@@ -72,7 +72,11 @@ const char *const finner_bidstr[FINNER_NTAGS] = {
 };
 
 fn_prs_f finner_statestr[FINNER_NTAGS] = {
+	[FINNER_CCY] = fn_ccy_prs,
 	[FINNER_UNIT_1] = fn_unit_1_prs,
+
+	/* collectors */
+	[FINNER_AMT] = fn_ccy_prs,
 };
 
 

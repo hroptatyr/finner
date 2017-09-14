@@ -72,17 +72,18 @@ fn_ccysym_bid(const char *str, size_t len)
 {
 	const char *sp = str;
 	const char *const ep = str + len;
-	ccy_t state = UNK;
+	ccy_t c = UNK;
+	uintptr_t s = 0U;
 
 	switch (*sp++) {
 	case 'A':
-		state = AUD;
+		c = AUD;
 		goto ACS;
 	case 'C':
-		state = CAD;
+		c = CAD;
 		goto ACS;
 	case 'S':
-		state = SGD;
+		c = SGD;
 		goto ACS;
 	ACS:
 		/* AUD, CAD, SGD */
@@ -95,11 +96,11 @@ fn_ccysym_bid(const char *str, size_t len)
 		if (sp >= ep || *sp++ != 'M') {
 			return fn_nul_bid;
 		}
-		state = DEM;
+		c = DEM;
 		break;
 	case '$':
 		/* USD */
-		state = USD;
+		c = USD;
 		break;
 	case '\xc2':
 		/* GBP, JPY */
@@ -108,10 +109,10 @@ fn_ccysym_bid(const char *str, size_t len)
 		}
 		switch (*sp++) {
 		case '\xa3':
-			state = GBP;
+			c = GBP;
 			break;
 		case '\xa5':
-			state = JPY;
+			c = JPY;
 			break;
 		default:
 			return fn_nul_bid;
@@ -122,13 +123,14 @@ fn_ccysym_bid(const char *str, size_t len)
 		if (sp + 1U >= ep || *sp++ != '\x82' || *sp++ != '\xac') {
 			return fn_nul_bid;
 		}
-		state = EUR;
+		c = EUR;
 		break;
 	default:
 		return fn_nul_bid;
 	}
 
-	return (fn_bid_t){FINNER_CCY, ep - sp, state};
+	memcpy(&s, ccy[c], 4U);
+	return (fn_bid_t){FINNER_CCY, ep - sp, s};
 }
 
 /* ccysym.c ends here */
