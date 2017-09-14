@@ -73,7 +73,7 @@ fn_amt_collect(const struct anno_s *a, size_t n)
 			return fn_nul_bid;
 		}
 	}
-	return (fn_bid_t){FINNER_AMT, 2U};
+	return (fn_bid_t){FINNER_AMT, 2U, a[0U].b.state ^ a[1U].b.state};
 }
 
 /* amt.c ends here */
