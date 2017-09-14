@@ -581,6 +581,11 @@ co_tanno(const struct ctx_s *UNUSED(ctx), const struct co_terms_retval_s *ta)
 			colourp && fputs("\x1b[0;2m", stdout);
 			fputc('/', stdout);
 			fputs(finner_bidstr[b.bid], stdout);
+			if (b.state && finner_statestr[b.bid]) {
+				fputc('(', stdout);
+				fputs(finner_statestr[b.bid](b.state), stdout);
+				fputc(')', stdout);
+			}
 			colourp && fputs("\x1b[0m", stdout);
 
 			last = x.end;

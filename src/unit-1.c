@@ -126,4 +126,28 @@ fn_unit_1_bid(const char *str, size_t len)
 	return (fn_bid_t){FINNER_UNIT_1, ep - sp, guess};
 }
 
+const char*
+fn_unit_1_prs(uintptr_t state)
+{
+	switch (state) {
+	case BILLION:
+		return "*1000000000";
+	case MILLION:
+		return "*1000000";
+	case THOUSAND:
+		return "*1000";
+	case TRILLION:
+		return "*1000000000000";
+	case PERCENT:
+		return "*0.01";
+	case BPOINT:
+		return "*0.0001";
+	case HUNDRED:
+		return "*100";
+	default:
+		break;
+	}
+	return "1";
+}
+
 /* unit-1.c ends here */

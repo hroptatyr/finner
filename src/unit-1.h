@@ -40,5 +40,6 @@
 #include "bidder.h"
 
 extern fn_bid_t fn_unit_1_bid(const char *str, size_t len);
+extern const char *fn_unit_1_prs(uintptr_t);
 
 #endif	/* INCLUDED_unit_1_h_ */

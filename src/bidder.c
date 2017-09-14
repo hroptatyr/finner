@@ -65,10 +65,14 @@ const char *const finner_bidstr[FINNER_NTAGS] = {
 	[FINNER_NUM] = "num",
 	[FINNER_WKN] = "wkn",
 	[FINNER_DATE] = "date",
-	[FINNER_UNIT_1] = "unit(1)",
+	[FINNER_UNIT_1] = "unit",
 
 	/* collectors */
 	[FINNER_AMT] = "amt",
+};
+
+fn_prs_f finner_statestr[FINNER_NTAGS] = {
+	[FINNER_UNIT_1] = fn_unit_1_prs,
 };
 
 
