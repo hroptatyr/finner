@@ -52,6 +52,7 @@
 #include "ccysym.h"
 #include "lei.h"
 #include "unit-1.h"
+#include "amt.h"
 
 const char *const finner_bidstr[FINNER_NTAGS] = {
 	[FINNER_TERM] = "term",
@@ -76,7 +77,7 @@ fn_prs_f finner_statestr[FINNER_NTAGS] = {
 	[FINNER_UNIT_1] = fn_unit_1_prs,
 
 	/* collectors */
-	[FINNER_AMT] = fn_ccy_prs,
+	[FINNER_AMT] = fn_amt_prs,
 };
 
 

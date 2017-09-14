@@ -40,6 +40,7 @@
 #include <assert.h>
 #include "nifty.h"
 #include "amt.h"
+#include "ccy.h"
 
 #define FINNER_CCYNUM	(FINNER_CCY ^ FINNER_NUM)
 
@@ -74,6 +75,12 @@ fn_amt_collect(const struct anno_s *a, size_t n)
 		}
 	}
 	return (fn_bid_t){FINNER_AMT, 2U, a[0U].b.state ^ a[1U].b.state};
+}
+
+const char*
+fn_amt_prs(uintptr_t s)
+{
+	return fn_ccy_prs(s);
 }
 
 /* amt.c ends here */
