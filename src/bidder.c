@@ -73,6 +73,7 @@ const char *const finner_bidstr[FINNER_NTAGS] = {
 };
 
 fn_prs_f finner_statestr[FINNER_NTAGS] = {
+	[FINNER_FXPAIR] = fn_fxpair_prs,
 	[FINNER_CCY] = fn_ccy_prs,
 	[FINNER_UNIT_1] = fn_unit_1_prs,
 
@@ -98,8 +99,8 @@ finner_bid(const char *str, size_t len)
 	CHECK(fn_lei_bid);
 	CHECK(fn_cusip_bid);
 	CHECK(fn_sedol_bid);
-	CHECK(fn_ccy_bid);
 	CHECK(fn_fxpair_bid);
+	CHECK(fn_ccy_bid);
 	CHECK(fn_date_bid);
 	/* high risk stuff last */
 	CHECK(fn_wkn_bid);

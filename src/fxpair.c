@@ -44,17 +44,28 @@
 /* allowed isin country codes */
 #include "fxpair-cc.c"
 
+typedef union {
+	uintptr_t u;
+	struct {
+		char b[3U];
+		char t[3U];
+	};
+} fxpair_state_t;
+
 
 /* class implementation */
 fn_bid_t
 fn_fxpair_bid(const char *str, size_t len)
 {
+	fxpair_state_t s = {0U};
+
 	/* common cases first */
 	if (len < 6U || len > 7U) {
 		return fn_nul_bid;
 	} else if (!valid_cc_p(str + 0U)) {
 		return fn_nul_bid;
 	}
+	memcpy(s.b, str, 3U);
 	with (const char *sp = str + 3U) {
 		switch (*sp) {
 		case '.':
@@ -69,10 +80,20 @@ fn_fxpair_bid(const char *str, size_t len)
 		} else if (!memcmp(str, sp, 3U)) {
 			return fn_nul_bid;
 		}
+		memcpy(s.t, sp, 3U);
 	}
 
 	/* bid just any number really */
-	return (fn_bid_t){FINNER_FXPAIR};
+	return (fn_bid_t){FINNER_FXPAIR, 0U, s.u};
+}
+
+const char*
+fn_fxpair_prs(uintptr_t u)
+{
+	static char buf[7U];
+	fxpair_state_t s = {u};
+	memcpy(buf, s.b, 6U);
+	return buf;
 }
 
 /* fxpair.c ends here */
