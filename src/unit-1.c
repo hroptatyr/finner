@@ -95,7 +95,10 @@ fn_unit_1_bid(const char *str, size_t len)
 			guess = BILLION;
 			goto illion;
 		}
-		sp++;
+		if (++sp < ep && (*sp != '.' || ++sp < ep)) {
+			/* only accept bn. and bp. */
+			guess = UNK;
+		}
 		break;
 	case 'm':
 		guess = MILLION;
