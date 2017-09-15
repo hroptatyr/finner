@@ -217,27 +217,29 @@ static const struct co_terms_retval_s {
 	for (const char *const ep = rd->buf + rd->bsz; bp < ep; bp++) {
 		if (UNLIKELY(*bp < 0)) {
 			cl = CLS_UNK;
-		} else if (*bp <= 0x20) {
+		} else if (*bp <= ' ') {
 			cl = CLS_TRSEP;
-		} else if (*bp <= 0x22) {
+		} else if (*bp <= '"') {
 			cl = CLS_TRSEP;
-		} else if (*bp <= 0x25) {
+		} else if (*bp <= '%') {
 			cl = CLS_ALNUM;
 		} else if (*bp == '+') {
 			cl = CLS_ALNUM;
-		} else if (*bp < 0x30) {
+		} else if (*bp < '0') {
 			cl = CLS_PUNCT;
-		} else if (*bp < 0x3a) {
+		} else if (*bp <= '9') {
 			cl = CLS_ALNUM;
-		} else if (*bp < 0x40) {
-			cl = CLS_TRSEP;
-		} else if (*bp < 0x5b) {
-			cl = CLS_ALNUM;
-		} else if (*bp < 0x5e) {
-			cl = CLS_TRSEP;
-		} else if (*bp < 0x61) {
+		} else if (*bp <= ':') {
 			cl = CLS_PUNCT;
-		} else if (*bp < 0x7b) {
+		} else if (*bp < '@') {
+			cl = CLS_TRSEP;
+		} else if (*bp <= 'Z') {
+			cl = CLS_ALNUM;
+		} else if (*bp < '^') {
+			cl = CLS_TRSEP;
+		} else if (*bp < 'a') {
+			cl = CLS_PUNCT;
+		} else if (*bp <= 'z') {
 			cl = CLS_ALNUM;
 		} else {
 			cl = CLS_PUNCT;
