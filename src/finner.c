@@ -457,7 +457,7 @@ co_tcoll(const struct co_terms_retval_s *tb)
 			continue;
 		}
 		/* copy all tokens from LASTB to I, if space there is */
-		if (nc + (i - lastb) + c.span + 1U > rz) {
+		if (UNLIKELY(nc + (i - lastb) + c.span + 1U > rz)) {
 			/* resize */
 			const size_t olz = rz + TCOLL_EXTRA;
 			const size_t least = nc + (i - lastb) + c.span + 1U;
