@@ -450,10 +450,15 @@ co_tcoll(const struct co_terms_retval_s *tb)
 
 		if (!av->b.bid) {
 			continue;
-		} else if (!(c = finner_collect(av, na)).bid) {
+		} else if ((c = finner_collect(av, na), !c.bid)) {
 			continue;
 		} else if (i == 0U && UNLIKELY(!c.span)) {
 			/* huh?  this must be broken */
+			continue;
+		} else if (c.bid == FINNER_DEGR) {
+			/* degrading */
+			lastb = i + c.span;
+			i += c.span - 1U;
 			continue;
 		}
 		/* copy all tokens from LASTB to I, if space there is */

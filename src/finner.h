@@ -56,7 +56,10 @@ typedef enum {
 
 	/* collections here */
 	FINNER_AMT,
-	FINNER_NTAGS
+	FINNER_NTAGS,
+
+	/* degrading */
+	FINNER_DEGR = -1,
 } fn_tok_t;
 
 /**
