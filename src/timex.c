@@ -57,6 +57,26 @@ fn_timex_bid(const char *str, size_t len)
 	if (len < 2U) {
 		return fn_nul_bid;
 	} else if (!DIGITP(str[0U])) {
+		switch (*str) {
+		case 'a':
+		case 'A':
+		case 'p':
+		case 'P':
+			/* am/pm indicator */
+			if (*++sp == '.') {
+				sp++;
+			}
+			if (sp >= ep || !(*sp == 'm' || *sp == 'M')) {
+				break;
+			}
+			/* optional dot */
+			if (*++sp == '.' && sp < ep) {
+				sp++;
+			}
+			goto good;
+		default:
+			break;
+		}
 		return fn_nul_bid;
 	}
 	sp++;
@@ -80,7 +100,7 @@ fn_timex_bid(const char *str, size_t len)
 			sp += 2U;
 		}
 	}
-
+good:
 	/* bid just any number really */
 	return (fn_bid_t){FINNER_TIME, ep - sp};
 }
