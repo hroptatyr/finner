@@ -63,10 +63,6 @@ struct ctx_s {
 	void(*prntf)(const struct ctx_s*, const struct co_terms_retval_s*);
 };
 
-_Static_assert(
-	sizeof(fn_bid_t) == 2U * sizeof(uintptr_t),
-	"possible size problem with fn_bid_t");
-
 
 static void
 __attribute__((format(printf, 1, 2)))
@@ -168,9 +164,14 @@ static const struct co_snarf_retval_s {
 }
 
 static const struct co_terms_retval_s {
-	const char *base;
-	size_t nannos;
-	extent_t bbox;
+	union {
+		struct {
+			const char *base;
+			size_t nannos;
+			extent_t bbox;
+		};
+		struct anno_s _algn_;
+	};
 	struct anno_s annos[];
 } *co_terms(const struct co_snarf_retval_s *rd)
 {
