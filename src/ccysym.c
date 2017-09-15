@@ -77,12 +77,21 @@ fn_ccysym_bid(const char *str, size_t len)
 
 	switch (*sp++) {
 	case 'A':
+		if (*sp == 'U') {
+			sp++;
+		}
 		c = AUD;
 		goto ACS;
 	case 'C':
+		if (*sp == 'A') {
+			sp++;
+		}
 		c = CAD;
 		goto ACS;
 	case 'S':
+		if (*sp == 'G') {
+			sp++;
+		}
 		c = SGD;
 		goto ACS;
 	ACS:
