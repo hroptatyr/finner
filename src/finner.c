@@ -552,9 +552,17 @@ co_textr(const struct ctx_s *ctx, const struct co_terms_retval_s *ta)
 
 				fwrite(pp, sizeof(*pp), pz, stdout);
 			}
-			fprintf(stdout, "\t%s\t[%zu,%zu)\n",
-				finner_bidstr[b.bid],
+			fputc('\t', stdout);
+			fputs(finner_bidstr[b.bid], stdout);
+			if (b.state && finner_statestr[b.bid]) {
+				fputc('(', stdout);
+				fputs(finner_statestr[b.bid](b.state), stdout);
+				fputc(')', stdout);
+			}
+			fputc('\t', stdout);
+			fprintf(stdout, "[%zu,%zu)",
 				x.sta + ctx->abs, x.end + ctx->abs);
+			fputc('\n', stdout);
 		}
 	}
 	return;
