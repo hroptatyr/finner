@@ -1,6 +1,6 @@
 /*** clitoris.c -- command-line-interface tester or is it?
  *
- * Copyright (C) 2013-2015 Sebastian Freundt
+ * Copyright (C) 2013-2016 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
@@ -41,6 +41,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <limits.h>
@@ -73,6 +74,10 @@
 # define countof(x)	(sizeof(x) / sizeof(*x))
 #endif	/* !countof */
 
+#if !defined strlenof
+# define strlenof(x)	(sizeof(x) - 1U)
+#endif	/* !strlenof */
+
 #if !defined with
 # define with(args...)	for (args, *__ep__ = (void*)1; __ep__; __ep__ = 0)
 #endif	/* !with */
@@ -80,6 +85,20 @@
 #if !defined PATH_MAX
 # define PATH_MAX	256U
 #endif	/* !PATH_MAX */
+
+#if defined HAVE_SPLICE && !defined SPLICE_F_MOVE && !defined _AIX
+/* just so we don't have to use _GNU_SOURCE declare prototype of splice() */
+# if defined __INTEL_COMPILER
+#  pragma warning(disable:1419)
+# endif	/* __INTEL_COMPILER */
+extern ssize_t splice(int, loff_t*, int, loff_t*, size_t, unsigned int);
+# define SPLICE_F_MOVE	(0U)
+# if defined __INTEL_COMPILER
+#  pragma warning(default:1419)
+# endif	/* __INTEL_COMPILER */
+#elif !defined SPLICE_F_MOVE
+# define SPLICE_F_MOVE	(0)
+#endif	/* !SPLICE_F_MOVE */
 
 typedef struct clitf_s clitf_t;
 typedef struct clit_buf_s clit_buf_t;
@@ -111,6 +130,9 @@ struct clit_opt_s {
 	unsigned int ptyp:1;
 	unsigned int keep_going_p:1;
 	unsigned int shcmdp:1;
+	/* just some padding to start afresh on an 8-bit boundary */
+	unsigned int:4;
+	unsigned int xcod:8;
 
 	/* use this instead of /bin/sh */
 	char *shcmd;
@@ -132,7 +154,7 @@ struct clit_chld_s {
 	char **huskv;
 };
 
-/* a test is the command (inlcuding stdin), stdout result, and stderr result */
+/* a test is the command (including stdin), stdout result, and stderr result */
 struct clit_tst_s {
 	clit_bit_t cmd;
 	clit_bit_t out;
@@ -299,9 +321,11 @@ xmemmem(const char *hay, const size_t hayz, const char *ndl, const size_t ndlz)
 static char*
 xstrndup(const char *s, size_t z)
 {
-	char *res = malloc(z + 1U);
-	memcpy(res, s, z);
-	res[z] = '\0';
+	char *res;
+	if ((res = malloc(z + 1U))) {
+		memcpy(res, s, z);
+		res[z] = '\0';
+	}
 	return res;
 }
 
@@ -310,16 +334,139 @@ cmdify(char *restrict cmd)
 {
 	/* prep for about 16 params */
 	char **v = calloc(16U, sizeof(*v));
-	size_t i = 0U;
-	const char *ifs = getenv("IFS") ?: " \t\n";
 
-	v[0U] = strtok(cmd, ifs);
-	do {
-		if (UNLIKELY((i % 16U) == 15U)) {
-			v = realloc(v, (i + 1U + 16U) * sizeof(*v));
-		}
-	} while ((v[++i] = strtok(NULL, ifs)) != NULL);
+	if (LIKELY(v != NULL)) {
+		const char *ifs = getenv("IFS") ?: " \t\n";
+		size_t i = 0U;
+
+		v[0U] = strtok(cmd, ifs);
+		do {
+			if (UNLIKELY((i % 16U) == 15U)) {
+				void *nuv;
+
+				nuv = realloc(v, (i + 1U + 16U) * sizeof(*v));
+				if (UNLIKELY(nuv == NULL)) {
+					free(v);
+					return NULL;
+				}
+				v = nuv;
+			}
+		} while ((v[++i] = strtok(NULL, ifs)) != NULL);
+	}
 	return v;
+}
+
+/* takes ideas from Gregory Pakosz's whereami */
+static char*
+get_argv0dir(const char *argv0)
+{
+/* return current executable */
+	char *res;
+
+	if (0) {
+#if 0
+
+#elif defined __linux__
+/* don't rely on argv0 at all */
+	} else if (1) {
+		if ((res = realpath("/proc/self/exe", NULL)) == NULL) {
+			/* we've got a plan B */
+			goto planb;
+		}
+#elif defined __APPLE__ && defined __MACH__
+	} else if (1) {
+		char buf[PATH_MAX];
+		uint32_t bsz = strlenof(buf);
+
+		buf[bsz] = '\0';
+		if (_NSGetExecutablePath(buf, &bsz) < 0) {
+			/* plan B again */
+			goto planb;
+		}
+		/* strdup BUF quickly */
+		res = strdup(buf);
+#elif defined __NetBSD__
+	} else if (1) {
+		static const char myself[] = "/proc/curproc/exe";
+		char buf[PATH_MAX];
+		ssize_t z;
+
+		if (UNLIKELY((z = readlink(myself, buf, bsz)) < 0)) {
+			/* plan B */
+			goto planb;
+		}
+		/* strndup him */
+		res = xstrndup(buf, z);
+#elif defined __DragonFly__
+	} else if (1) {
+		static const char myself[] = "/proc/curproc/file";
+		char buf[PATH_MAX];
+		ssize_t z;
+
+		if (UNLIKELY((z = readlink(myself, buf, bsz)) < 0)) {
+			/* blimey, proceed with plan B */
+			goto planb;
+		}
+		/* strndup him */
+		res = xstrndup(buf, z);
+#elif defined __FreeBSD__
+	} else if (1) {
+		int mib[] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1};
+		char buf[PATH_MAX];
+		size_t z = strlenof(buf);
+
+		/* make sure that \0 terminator fits */
+		buf[z] = '\0';
+		if (UNLIKELY(sysctl(mib, countof(mib), buf, &z, NULL, 0) < 0)) {
+			/* no luck today */
+			goto planb;
+		}
+		/* make the result our own */
+		res = strdup(buf);
+#elif defined __sun || defined sun
+	} else if (1) {
+		char buf[PATH_MAX];
+		ssize_t z;
+
+		snprintf(buf, sizeof(buf), "/proc/%d/path/a.out", getpid());
+		if (UNLIKELY((z = readlink(buf, buf, sizeof(buf))) < 0)) {
+			/* nope, plan A failed */
+			goto planb;
+		}
+		res = xstrndup(buf, z);
+#endif	/* OS */
+	} else {
+		size_t argz0;
+
+	planb:
+		/* backup plan, massage argv0 */
+		if (argv0 == NULL) {
+			return NULL;
+		}
+		/* otherwise copy ARGV0, or rather the first PATH_MAX chars */
+		for (argz0 = 0U; argz0 < PATH_MAX && argv0[argz0]; argz0++);
+		res = xstrndup(argv0, argz0);
+	}
+
+	/* path extraction aka dirname'ing, absolute or otherwise */
+	if (res == NULL) {
+		return NULL;
+	}
+	with (char *dir0 = strrchr(res, '/')) {
+		if (dir0 == NULL) {
+			free(res);
+			return NULL;
+		}
+		*dir0 = '\0';
+	}
+	return res;
+}
+
+static void
+free_argv0dir(char *a0)
+{
+	free(a0);
+	return;
 }
 
 
@@ -468,6 +615,32 @@ pfork(int *pty)
 }
 #endif	/* HAVE_PTY_H */
 
+static inline int
+xsplice(int tgtfd, int srcfd, unsigned int flags)
+{
+#if defined HAVE_SPLICE && defined __linux__
+	for (ssize_t nsp;
+	     (nsp = splice(
+		      srcfd, NULL, tgtfd, NULL,
+		      4096U, flags)) == 4096U;);
+#else  /* !HAVE_SPLICE || !__linux__ */
+/* in particular, AIX's splice works on tcp sockets only */
+	with (char *buf[16U * 4096U]) {
+		ssize_t nrd;
+
+		while ((nrd = read(srcfd, buf, sizeof(buf))) > 0) {
+			for (ssize_t nwr, totw = 0;
+			     totw < nrd &&
+				     (nwr = write(
+					      tgtfd,
+					      buf + totw, nrd - totw)) >= 0;
+			     totw += nwr);
+		}
+	}
+#endif	/* HAVE_SPLICE && __linux__ */
+	return 0;
+}
+
 
 static const char *
 find_shtok(const char *bp, size_t bz)
@@ -559,12 +732,12 @@ find_ignore(struct clit_tst_s tst[static 1])
 		static char tok_out[] = "output";
 		static char tok_ret[] = "return";
 
-		if (strncmp(cmd, tok_ign, sizeof(tok_ign) - 1U)) {
+		if (strncmp(cmd, tok_ign, strlenof(tok_ign))) {
 			/* don't bother */
 			break;
 		}
 		/* fast-forward a little */
-		cmd += sizeof(tok_ign) - 1U;
+		cmd += strlenof(tok_ign);
 
 		if (isspace(*cmd)) {
 			/* it's our famous ignore token it seems */
@@ -572,14 +745,14 @@ find_ignore(struct clit_tst_s tst[static 1])
 		} else if (*cmd++ != '-') {
 			/* unknown token then */
 			break;
-		} else if (!strncmp(cmd, tok_out, sizeof(tok_out) - 1U)) {
+		} else if (!strncmp(cmd, tok_out, strlenof(tok_out))) {
 			/* ignore-output it is */
 			tst->ign_out = 1U;
-			cmd += sizeof(tok_out) - 1U;
-		} else if (!strncmp(cmd, tok_ret, sizeof(tok_ret) - 1U)) {
+			cmd += strlenof(tok_out);
+		} else if (!strncmp(cmd, tok_ret, strlenof(tok_ret))) {
 			/* ignore-return it is */
 			tst->ign_ret = 1U;
-			cmd += sizeof(tok_ret) - 1U;
+			cmd += strlenof(tok_ret);
 		} else {
 			/* don't know what's going on */
 			break;
@@ -607,11 +780,12 @@ find_negexp(struct clit_tst_s tst[static 1])
 		case '?'/*EXP*/:;
 			char *p;
 			exp = strtoul(cmd + 1U, &p, 10);
-			cmd = cmd + (p - cmd);
+			cmd = p;
 			if (isspace(*cmd)) {
 				break;
 			}
 		default:
+			tst->exp_ret = 0U;
 			return -1;
 		}
 
@@ -699,20 +873,14 @@ find_tst(struct clit_tst_s tst[static 1], const char *bp, size_t bz)
 		}
 	}
 
-	while (
-		/* oh let's see if we should ignore things */
-		!find_ignore(tst) ||
-
-		/* check for suppress diff */
-		!find_suppdiff(tst) ||
-
-		/* check for expect and negate operators */
-		!find_negexp(tst) ||
-
-		/* check for proto-output expander */
-		!find_xpnd_proto(tst) ||
-
-		0);
+	/* oh let's see if we should ignore things */
+	(void)find_ignore(tst);
+	/* check for suppress diff */
+	(void)find_suppdiff(tst);
+	/* check for expect and negate operators */
+	(void)find_negexp(tst);
+	/* check for proto-output expander */
+	(void)find_xpnd_proto(tst);
 
 	tst->err = (clit_bit_t){0U};
 	return 0;
@@ -727,7 +895,7 @@ find_opt(struct clit_opt_s options, const char *bp, size_t bz)
 	static const char magic[] = "setopt ";
 
 	for (const char *mp;
-	     (mp = xmemmem(bp, bz, magic, sizeof(magic) - 1U)) != NULL;
+	     (mp = xmemmem(bp, bz, magic, strlenof(magic))) != NULL;
 	     bz -= (mp + 1U) - bp, bp = mp + 1U) {
 		unsigned int opt;
 
@@ -741,12 +909,14 @@ find_opt(struct clit_opt_s options, const char *bp, size_t bz)
 			opt = 0U;
 		} else {
 			/* found rubbish then */
-			mp += sizeof(magic) - 1U;
+			mp += strlenof(magic);
 			continue;
 		}
-#define CMP(x, lit)	(strncmp((x), (lit), sizeof(lit) - 1))
+#define CMP(x, lit)	(strncmp((x), (lit), strlenof(lit)))
 		/* parse the option value */
-		if ((mp += sizeof(magic) - 1U) == NULL) {
+		mp += strlenof(magic);
+		if (NULL) {
+			/* not reached */
 			;
 		} else if (CMP(mp, "verbose\n") == 0) {
 			options.verbosep = opt;
@@ -772,6 +942,14 @@ find_opt(struct clit_opt_s options, const char *bp, size_t bz)
 			}
 			options.shcmd = xstrndup(arg, eol - arg);
 			options.shcmdp = 1U;
+		} else if (CMP(mp, "exit-code") == 0) {
+			const char *arg = mp + sizeof("exit-code");
+			char *p;
+			long unsigned int xc;
+
+			if ((xc = strtoul(arg, &p, 0), *p == '\n')) {
+				options.xcod = (unsigned int)xc;
+			}
 		}
 #undef CMP
 	}
@@ -1067,9 +1245,6 @@ differ(struct clit_chld_s ctx[static 1], clit_bit_t exp, bool xpnd_proto_p)
 		if (expfd >= 0) {
 			close(expfd);
 		}
-		if (actfd >= 0) {
-			close(actfd);
-		}
 		kill(difftool, SIGTERM);
 		difftool = -1;
 		break;
@@ -1182,7 +1357,7 @@ init_tst(struct clit_chld_s ctx[static 1], struct clit_tst_s tst[static 1])
 }
 
 static struct {
-	sig_t old_hdl;
+	void (*old_hdl)(int);
 	pid_t feed;
 	pid_t diff;
 } alrm_handler_closure;
@@ -1223,6 +1398,8 @@ run_tst(struct clit_chld_s ctx[static 1], struct clit_tst_s tst[static 1])
 		goto wait;
 	}
 	if (ctx->options.timeo > 0 && (ctx->feed > 0 || ctx->diff > 0)) {
+		alrm_handler_closure.feed = ctx->feed;
+		alrm_handler_closure.diff = ctx->diff;
 		alrm_handler_closure.old_hdl = signal(SIGALRM, alrm_handler);
 	}
 	with (const char *p = tst->cmd.d, *const ep = tst->cmd.d + tst->cmd.z) {
@@ -1238,6 +1415,7 @@ run_tst(struct clit_chld_s ctx[static 1], struct clit_tst_s tst[static 1])
 		 * or in case of a pty, send exit command and keep fingers
 		 * crossed the pty will close itself */
 		close(ctx->pin);
+		ctx->pin = -1;
 	}
 
 	/* wait for the beef child */
@@ -1249,8 +1427,8 @@ run_tst(struct clit_chld_s ctx[static 1], struct clit_tst_s tst[static 1])
 			rc = 0;
 		} else if (tst->exp_ret == 255U && rc) {
 			rc = 0;
-		} else {
-			rc = 1;
+		} else if (ctx->options.xcod) {
+			rc = ctx->options.xcod;
 		}
 	} else {
 		rc = 1;
@@ -1289,22 +1467,14 @@ wait:
 	}
 
 #if defined HAVE_PTY_H
-	if (UNLIKELY(ctx->options.ptyp)) {
+	if (UNLIKELY(ctx->options.ptyp && ctx->pin >= 0)) {
 		/* also close child's stdin here */
 		close(ctx->pin);
 	}
 
 	/* also connect per's out end with stderr */
 	if (UNLIKELY(ctx->options.ptyp)) {
-# if defined HAVE_SPLICE
-#  if !defined SPLICE_F_MOVE
-#   define SPLICE_F_MOVE		(0)
-#  endif  /* SPLICE_F_MOVE */
-		for (ssize_t nsp;
-		     (nsp = splice(
-			      ctx->per, NULL, STDERR_FILENO, NULL,
-			      4096U, SPLICE_F_MOVE)) == 4096U;);
-# endif	/* HAVE_SPLICE */
+		xsplice(ctx->per, STDERR_FILENO, SPLICE_F_MOVE);
 		close(ctx->per);
 	}
 #endif	/* HAVE_PTY_H */
@@ -1527,15 +1697,33 @@ main(int argc, char *argv[])
 	} else if (getenv("DIFF") != NULL) {
 		cmd_diff = getenv("DIFF");
 	}
+	if (argi->exit_code_arg == (const char*)0x1U) {
+		options.xcod = 0U;
+	} else if (argi->exit_code_arg) {
+		options.xcod = strtoul(argi->exit_code_arg, NULL, 0);
+	} else {
+		options.xcod = 1U;
+	}
 
-	/* prepend our current directory and our argv[0] directory */
-	with (char *arg0 = argv[0]) {
-		char *dir0;
-		if ((dir0 = strrchr(arg0, '/')) != NULL) {
-			*dir0 = '\0';
+	/* Although I cannot support my claim with a hard survey, I would
+	 * say in 99.9 cases out of a hundred the cli tool in question
+	 * has not been installed at the time of testing it, so somehow
+	 * we must make sure to test the version in the build directory
+	 * rather than a globally installed one.
+	 *
+	 * On the other hand, in general we won't know where the build
+	 * directory is, we've got --builddir for that, however we can
+	 * assist our users by prepending the current working directory
+	 * and the directory we're run from to PATH.
+	 *
+	 * So let's prepend our argv[0] directory */
+	with (char *arg0 = get_argv0dir(argv[0])) {
+		if (LIKELY(arg0 != NULL)) {
 			prepend_path(arg0);
+			free_argv0dir(arg0);
 		}
 	}
+	/* ... and our current directory */
 	prepend_path(".");
 	/* also bang builddir to path */
 	with (char *blddir = getenv("builddir")) {
@@ -1543,8 +1731,8 @@ main(int argc, char *argv[])
 			/* use at most 256U bytes for blddir */
 			char _blddir[256U];
 
-			memccpy(_blddir, blddir, '\0', sizeof(_blddir) - 1U);
-			_blddir[sizeof(_blddir) - 1U] = '\0';
+			memccpy(_blddir, blddir, '\0', strlenof(_blddir));
+			_blddir[strlenof(_blddir)] = '\0';
 			prepend_path(_blddir);
 		}
 	}
