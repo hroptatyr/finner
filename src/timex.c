@@ -45,6 +45,11 @@
 #define DIGITP(x)	(((unsigned char)((x) ^ '0')) < 10U)
 #define SEPARP(x)	((x) == ':' || (x) == 'h')
 
+typedef enum {
+	UNK,
+	AUX,
+} timex_state_t;
+
 
 /* class implementation */
 fn_bid_t
@@ -52,6 +57,7 @@ fn_timex_bid(const char *str, size_t len)
 {
 	const char *const ep = str + len;
 	const char *sp = str;
+	timex_state_t s = UNK;
 
 	/* at least a digit and a separator we want */
 	if (len < 2U) {
@@ -73,6 +79,7 @@ fn_timex_bid(const char *str, size_t len)
 			if (*++sp == '.' && sp < ep) {
 				sp++;
 			}
+			s = AUX;
 			goto good;
 		default:
 			break;
@@ -102,7 +109,22 @@ fn_timex_bid(const char *str, size_t len)
 	}
 good:
 	/* bid just any number really */
-	return (fn_bid_t){FINNER_TIME, ep - sp};
+	return (fn_bid_t){FINNER_TIME, ep - sp, s};
+}
+
+fn_bid_t
+fn_timex_collect(const struct anno_s *av, size_t len)
+{
+	if (av->b.bid == FINNER_TIME && av->b.state == AUX) {
+		/* degrade */
+		return (fn_bid_t){FINNER_DEGR, 1U};
+	} else if (len <= 1U) {
+		return fn_nul_bid;
+	} else if (av[1U].b.bid != FINNER_TIME || av[1U].b.state != AUX) {
+		return fn_nul_bid;
+	}
+	/* otherwise collect */
+	return (fn_bid_t){FINNER_TIME, 2U};
 }
 
 /* timex.c ends here */

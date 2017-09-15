@@ -40,5 +40,6 @@
 #include "bidder.h"
 
 extern fn_bid_t fn_timex_bid(const char *str, size_t len);
+extern fn_bid_t fn_timex_collect(const struct anno_s *av, size_t len);
 
 #endif	/* INCLUDED_timex_h_ */
