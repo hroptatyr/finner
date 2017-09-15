@@ -1,6 +1,6 @@
 /*** num.c -- checker for numbers
  *
- * Copyright (C) 2014-2015 Sebastian Freundt
+ * Copyright (C) 2014-2017 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
@@ -40,6 +40,7 @@
 #include <assert.h>
 #include "nifty.h"
 #include "num.h"
+#include "unit-1.h"
 
 
 /* class implementation */
@@ -105,6 +106,26 @@ fn_num_bid(const char *str, size_t len)
 		}
 	}
 	return (fn_bid_t){FINNER_NUM, ep - sp};
+}
+
+fn_bid_t
+fn_num_collect(const struct anno_s *av, size_t len)
+{
+/* a number paired with a unit-1 */
+	if (UNLIKELY(len <= 1U)) {
+		return fn_nul_bid;
+	} else if (av[0U].b.bid != FINNER_NUM ||
+		   av[1U].b.bid != FINNER_UNIT_1) {
+		return fn_nul_bid;
+	}
+	return (fn_bid_t){FINNER_NUM, 2U, av[0U].b.state ^ av[1U].b.state};
+}
+
+const char*
+fn_num_prs(uintptr_t s)
+{
+/* this must come from the collection */
+	return fn_unit_1_prs(s);
 }
 
 /* num.c ends here */
