@@ -49,6 +49,8 @@ fn_bid_t
 fn_amt_collect(const struct anno_s *a, size_t n)
 {
 /* a number paired with a currency is retagged as amount AMT */
+	size_t m = 2U;
+
 	switch (a->b.bid) {
 	case FINNER_CCY:
 	case FINNER_NUM:
@@ -63,17 +65,31 @@ fn_amt_collect(const struct anno_s *a, size_t n)
 	default:
 		return fn_nul_bid;
 	}
-	if (n > 2U && (a[1U].b.bid ^ a[2U].b.bid) == FINNER_CCYNUM) {
-		/* check the distances */
-		size_t a01 = fn_extent_dist(a[0U].x, a[1U].x);
-		size_t a12 = fn_extent_dist(a[1U].x, a[2U].x);
+	if (n > 2U) {
+		/* check for optional stuff */
+		switch (a[2U].b.bid) {
+		case FINNER_NUM:
+			if (a[1U].b.bid == FINNER_CCY) {
+				/* this is the NUM CCY NUM constellation
+				 * check the distances */
+				size_t a01 = fn_extent_dist(a[0U].x, a[1U].x);
+				size_t a12 = fn_extent_dist(a[1U].x, a[2U].x);
 
-		if (a12 < a01 && a->b.bid == FINNER_NUM) {
-			/* we prefer the constellation CCY NUM */
-			return fn_nul_bid;
+				if (a12 < a01 && a->b.bid == FINNER_NUM) {
+					/* we prefer CCY NUM */
+					return fn_nul_bid;
+				}
+			}
+			break;
+		case FINNER_UNIT_1:
+			/* could be things like million billion etc. */
+			m = 3U;
+			break;
+		default:
+			break;
 		}
 	}
-	return (fn_bid_t){FINNER_AMT, 2U, a[0U].b.state ^ a[1U].b.state};
+	return (fn_bid_t){FINNER_AMT, m, a[0U].b.state ^ a[1U].b.state};
 }
 
 /* amt.c ends here */
