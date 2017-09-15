@@ -368,9 +368,6 @@ AC_DEFUN([SXE_OPTIFLAGS], [dnl
 	SXE_CHECK_COMPILER_FLAG([-ipo], [
 		optiflags="${optiflags} -ipo"
 
-		AC_CHECK_TOOLS([AR], [xiar ar], [false])
-		AC_CHECK_TOOLS([LD], [xild ld], [false])
-
 		## fiddle with xiar and xild params, kick ansi aliasing warnings
 		if test "${ac_cv_prog_ac_ct_AR}" = "xiar"; then
 			AR="${AR} -qdiag-disable=2102"
@@ -544,6 +541,9 @@ dnl standards are flavours supported by the compiler chosen with AC_PROG_CC
 	AC_REQUIRE([AC_CANONICAL_BUILD])
 	AC_REQUIRE([AC_PROG_CPP])
 	AC_REQUIRE([AC_PROG_CC])
+
+	AC_CHECK_TOOLS([AR], [xiar ar], [false])
+	AC_CHECK_TOOLS([LD], [xild ld], [false])
 
 	AC_HEADER_STDC
 
