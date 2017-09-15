@@ -1,0 +1,18 @@
+name: finner
+version: '0.1.0-GIT'
+summary: Financial terms NER
+description: |
+    Command-line tool to detect all kinds of entities in
+    financial news texts, like ISINs, FIGIs (BBGIDs),
+    monetary values, date and time stamps, etc.
+grade: stable
+confinement: strict
+
+apps:
+    finner:
+        command: bin/finner
+
+parts:
+    finner:
+        plugin: autotools
+        source: https://github.com/hroptatyr/finner.git
