@@ -1,6 +1,6 @@
-/*** bidder.c -- determine token types
+/*** timex.c -- checker for times
  *
- * Copyright (C) 2014-2015 Sebastian Freundt
+ * Copyright (C) 2014-2017 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
@@ -34,83 +34,55 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  ***/
-#if defined HAVE_CONFIG_H
-# include "config.h"
-#endif	/* HAVE_CONFIG_H */
-#include "bidder.h"
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdbool.h>
+#include <assert.h>
 #include "nifty.h"
-/* bidders */
-#include "figi.h"
-#include "isin.h"
-#include "cusip.h"
-#include "sedol.h"
-#include "ccy.h"
-#include "fxpair.h"
-#include "num.h"
-#include "wkn.h"
-#include "date.h"
 #include "timex.h"
-#include "ccysym.h"
-#include "lei.h"
-#include "unit-1.h"
-#include "amt.h"
 
-const char *const finner_bidstr[FINNER_NTAGS] = {
-	[FINNER_TERM] = "term",
-	[FINNER_FIGI] = "figi",
-	[FINNER_ISIN] = "isin",
-	[FINNER_LEI] = "lei",
-	[FINNER_CUSIP] = "cusip",
-	[FINNER_SEDOL] = "sedol",
-	[FINNER_CCY] = "ccy",
-	[FINNER_FXPAIR] = "fxpair",
-	[FINNER_NUM] = "num",
-	[FINNER_WKN] = "wkn",
-	[FINNER_DATE] = "date",
-	[FINNER_TIME] = "time",
-	[FINNER_UNIT_1] = "unit",
-
-	/* collectors */
-	[FINNER_AMT] = "amt",
-};
-
-fn_prs_f finner_statestr[FINNER_NTAGS] = {
-	[FINNER_FXPAIR] = fn_fxpair_prs,
-	[FINNER_CCY] = fn_ccy_prs,
-	[FINNER_UNIT_1] = fn_unit_1_prs,
-
-	/* collectors */
-	[FINNER_AMT] = fn_amt_prs,
-};
+#define DIGITP(x)	(((unsigned char)((x) ^ '0')) < 10U)
+#define SEPARP(x)	((x) == ':' || (x) == 'h')
 
 
-/* public api */
+/* class implementation */
 fn_bid_t
-finner_bid(const char *str, size_t len)
+fn_timex_bid(const char *str, size_t len)
 {
-#define CHECK(bidder)					\
-	with (fn_bid_t x = bidder(str, len)) {		\
-		if (x.bid) {				\
-			return x;			\
-		}					\
+	const char *const ep = str + len;
+	const char *sp = str;
+
+	/* at least a digit and a separator we want */
+	if (len < 2U) {
+		return fn_nul_bid;
+	} else if (!DIGITP(str[0U])) {
+		return fn_nul_bid;
+	}
+	sp++;
+	sp += DIGITP(*sp);
+	if (sp >= ep || !SEPARP(*sp)) {
+		return fn_nul_bid;
+	}
+	/* optionally allow another pair of digits */
+	if (++sp < ep) {
+		if (sp + 2U > ep || !(DIGITP(sp[0U]) && DIGITP(sp[1U]))) {
+			return fn_nul_bid;
+		}
+		sp += 2U;
+		/* optionally allow another separator, only : though */
+		if (sp < ep && *sp++ == ':') {
+			/* another 2 digits */
+			if (sp + 2U > ep ||
+			    !(DIGITP(sp[0U]) && DIGITP(sp[1U]))) {
+				return fn_nul_bid;
+			}
+			sp += 2U;
+		}
 	}
 
-	/* start the bidding */
-	CHECK(fn_figi_bid);
-	CHECK(fn_isin_bid);
-	CHECK(fn_lei_bid);
-	CHECK(fn_cusip_bid);
-	CHECK(fn_sedol_bid);
-	CHECK(fn_fxpair_bid);
-	CHECK(fn_ccy_bid);
-	CHECK(fn_date_bid);
-	CHECK(fn_timex_bid);
-	/* high risk stuff last */
-	CHECK(fn_wkn_bid);
-	CHECK(fn_num_bid);
-	CHECK(fn_ccysym_bid);
-	CHECK(fn_unit_1_bid);
-	return fn_nul_bid;
+	/* bid just any number really */
+	return (fn_bid_t){FINNER_TIME, ep - sp};
 }
 
-/* bidder.c ends here */
+/* timex.c ends here */

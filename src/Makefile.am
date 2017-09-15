@@ -42,6 +42,7 @@ libbidder_la_SOURCES += num.c num.h
 libbidder_la_SOURCES += unit-1.c unit-1.h
 libbidder_la_SOURCES += wkn.c wkn.h
 libbidder_la_SOURCES += date.c date.h
+libbidder_la_SOURCES += timex.c timex.h
 libbidder_la_SOURCES += ccysym.c ccysym.h
 libbidder_la_SOURCES += amt.c amt.h
 
