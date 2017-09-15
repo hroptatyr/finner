@@ -40,5 +40,6 @@
 #include "bidder.h"
 
 extern fn_bid_t fn_num_bid(const char *str, size_t len);
+extern fn_bid_t fn_num_collect(const struct anno_s *av, size_t len);
 
 #endif	/* INCLUDED_num_h_ */
