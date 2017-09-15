@@ -40,6 +40,7 @@
 #include "collector.h"
 #include "nifty.h"
 #include "amt.h"
+#include "timex.h"
 
 
 /* public api */
@@ -48,13 +49,14 @@ finner_collect(const struct anno_s *av, size_t len)
 {
 #define CHECK(collector)				\
 	with (fn_bid_t x = collector(av, len)) {	\
-		if (x.bid) {				\
+		if (x.bid || x.span) {				\
 			return x;			\
 		}					\
 	}
 
 	/* start the bidding */
 	CHECK(fn_amt_collect);
+	CHECK(fn_timex_collect);
 	return fn_nul_bid;
 }
 
