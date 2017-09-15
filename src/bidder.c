@@ -78,6 +78,7 @@ fn_prs_f finner_statestr[FINNER_NTAGS] = {
 	[FINNER_FXPAIR] = fn_fxpair_prs,
 	[FINNER_CCY] = fn_ccy_prs,
 	[FINNER_UNIT_1] = fn_unit_1_prs,
+	[FINNER_NUM] = fn_num_prs,
 
 	/* collectors */
 	[FINNER_AMT] = fn_amt_prs,

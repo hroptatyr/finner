@@ -40,6 +40,7 @@
 #include <assert.h>
 #include "nifty.h"
 #include "num.h"
+#include "unit-1.h"
 
 
 /* class implementation */
@@ -118,6 +119,13 @@ fn_num_collect(const struct anno_s *av, size_t len)
 		return fn_nul_bid;
 	}
 	return (fn_bid_t){FINNER_NUM, 2U, av[0U].b.state ^ av[1U].b.state};
+}
+
+const char*
+fn_num_prs(uintptr_t s)
+{
+/* this must come from the collection */
+	return fn_unit_1_prs(s);
 }
 
 /* num.c ends here */

@@ -41,5 +41,6 @@
 
 extern fn_bid_t fn_num_bid(const char *str, size_t len);
 extern fn_bid_t fn_num_collect(const struct anno_s *av, size_t len);
+extern const char *fn_num_prs(uintptr_t s);
 
 #endif	/* INCLUDED_num_h_ */
