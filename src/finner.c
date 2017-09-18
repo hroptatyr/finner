@@ -156,6 +156,14 @@ static const struct co_snarf_retval_s {
 		}
 
 	case SNARF_POST:
+		/* now it's NPR less unprocessed bytes */
+		ret.bsz -= npr;
+		/* check if we need to move buffer contents */
+		if (ret.bsz > 0) {
+			memmove(buf, buf + npr, ret.bsz);
+			/* process */
+			return &ret;
+		}
 		st = SNARF_NONE;
 		ret.bsz = 0U;
 		break;
