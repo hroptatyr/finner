@@ -108,7 +108,7 @@ fn_unit_1_bid(const char *str, size_t len)
 		}
 		goto illion;
 	case 't':
-		if (++sp >= ep || *sp != 'r') {
+		if (++sp >= ep || *sp++ != 'r') {
 			/* it's nothing */
 			break;
 		}
