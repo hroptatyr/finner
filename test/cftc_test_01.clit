@@ -1,6 +1,7 @@
 #!/usr/bin/clitoris  ## -*- shell-script -*-
 
 $ finner extr "${srcdir}/cftc_test_01.txt" | tr '$' '@'
+February	date	[157,165)
 5	num	[166,167)
 2008	num	[169,173)
 @ 1000	amt(USD)	[869,874)
@@ -26,6 +27,7 @@ $ finner extr "${srcdir}/cftc_test_01.txt" | tr '$' '@'
 48,442	num	[1243,1249)
 6,597	num	[1255,1260)
 6,652	num	[1266,1271)
+January	date	[1539,1546)
 29	num	[1547,1549)
 2008	num	[1551,1555)
 1,080	num	[1589,1594)
