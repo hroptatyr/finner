@@ -49,6 +49,7 @@ fn_num_bid(const char *str, size_t len)
 {
 	const char *sp = str;
 	const char *const ep = str + len;
+	fn_bid_t tmp = fn_nul_bid;
 
 	if (UNLIKELY(*sp == '-')) {
 		/* allow leading `-' */
@@ -98,14 +99,16 @@ fn_num_bid(const char *str, size_t len)
 				sp++;
 				goto dot;
 			}
-			/* otherwise it's bullshit */
-			break;
 		default:
-			sp--;
-			break;
+			/* otherwise check for units */
+			if ((tmp = fn_unit_1_bid(sp, ep - sp)).bid) {
+				/* return collected */
+				break;;
+			}
+			return fn_nul_bid;
 		}
 	}
-	return (fn_bid_t){FINNER_NUM, ep - sp};
+	return (fn_bid_t){FINNER_NUM, ep - sp + tmp.leftover, tmp.state};
 }
 
 fn_bid_t
