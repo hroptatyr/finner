@@ -462,7 +462,7 @@ co_tcoll(const struct co_terms_retval_s *tb)
 			continue;
 		} else if ((c = finner_collect(av, na), !c.bid)) {
 			continue;
-		} else if (i == 0U && UNLIKELY(!c.span)) {
+		} else if (!c.span) {
 			/* huh?  this must be broken */
 			continue;
 		} else if (c.bid == FINNER_DEGR) {
