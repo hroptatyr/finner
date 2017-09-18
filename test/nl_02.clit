@@ -1,0 +1,7 @@
+#!/usr/bin/clitoris  ## -*- shell-script -*-
+
+$ echo '7' | finner anno
+7/num
+$ echo 'x 7' | finner anno
+x 7/num
+$

@@ -156,6 +156,14 @@ static const struct co_snarf_retval_s {
 		}
 
 	case SNARF_POST:
+		/* now it's NPR less unprocessed bytes */
+		ret.bsz -= npr;
+		/* check if we need to move buffer contents */
+		if (ret.bsz > 0) {
+			memmove(buf, buf + npr, ret.bsz);
+			/* process */
+			return &ret;
+		}
 		st = SNARF_NONE;
 		ret.bsz = 0U;
 		break;
@@ -195,10 +203,6 @@ static const struct co_terms_retval_s {
 		CLS_TRSEP,
 		CLS_ALNUM,
 	} cl;
-	const char *bp = rd->buf;
-	const char *ap = rd->buf;
-	const char *fp = rd->buf;
-	size_t ia = 0U;
 #define TERMS_EXTRA	(sizeof(*rv) / sizeof(*rv->annos))
 	_Static_assert(TERMS_EXTRA > 0U, "terms array type is bigger than header");
 
@@ -215,6 +219,10 @@ static const struct co_terms_retval_s {
 		return NULL;
 	}
 
+	const char *bp = rd->buf;
+	const char *ap = rd->buf;
+	const char *fp = rd->buf;
+	size_t ia = 0U;
 	for (const char *const ep = rd->buf + rd->bsz; bp < ep; bp++) {
 		if (UNLIKELY(*bp < 0)) {
 			cl = CLS_UNK;
@@ -616,8 +624,6 @@ co_tanno(const struct ctx_s *UNUSED(ctx), const struct co_terms_retval_s *ta)
 static int
 proc1(const struct ctx_s *ctx, const char *fn)
 {
-	const struct co_snarf_retval_s *rd = NULL;
-	const struct co_terms_retval_s *tv = NULL;
 	struct ctx_s ctxcpy = *ctx;
 	int rc = 0;
 	int fd;
@@ -631,18 +637,21 @@ proc1(const struct ctx_s *ctx, const char *fn)
 	}
 
 	ctxcpy.abs = 0U;
-	for (ssize_t npr = 0;; ctxcpy.abs += (npr = tv->bbox.end)) {
-		if ((rd = co_snarf(fd, npr)) == NULL) {
-			break;
-		} else if ((tv = co_terms(rd)) == NULL) {
-			break;
-		} else if ((tv = co_tbids(tv)) == NULL) {
-			break;
-		} else if ((tv = co_tcoll(tv)) == NULL) {
-			break;
-		} else if (ctx->prntf(&ctxcpy, tv), 0) {
+	for (ssize_t npr = 0;; ctxcpy.abs += npr) {
+		const struct co_snarf_retval_s *rd;
+		const struct co_terms_retval_s *tv;
+
+		rd = co_snarf(fd, npr);
+		tv = co_terms(rd);
+		tv = co_tbids(tv);
+		tv = co_tcoll(tv);
+
+		if (UNLIKELY(tv == NULL)) {
 			break;
 		}
+
+		ctx->prntf(&ctxcpy, tv);
+		npr = tv->bbox.end;
 	}
 
 	/* clean up */

@@ -32,4 +32,7 @@ TESTS += cftc_test_01.clit
 TESTS += cftc_test_02.clit
 EXTRA_DIST += cftc_test_01.txt
 
+TESTS += nl_01.clit
+TESTS += nl_02.clit
+
 ## Makefile.am ends here
