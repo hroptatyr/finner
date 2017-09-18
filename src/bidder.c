@@ -49,6 +49,7 @@
 #include "num.h"
 #include "wkn.h"
 #include "date.h"
+#include "datex.h"
 #include "timex.h"
 #include "ccysym.h"
 #include "lei.h"
@@ -105,6 +106,7 @@ finner_bid(const char *str, size_t len)
 	CHECK(fn_fxpair_bid);
 	CHECK(fn_ccy_bid);
 	CHECK(fn_date_bid);
+	CHECK(fn_datex_bid);
 	CHECK(fn_timex_bid);
 	/* high risk stuff last */
 	CHECK(fn_wkn_bid);
