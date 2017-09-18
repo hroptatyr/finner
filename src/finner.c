@@ -216,6 +216,7 @@ static const struct co_terms_retval_s {
 	} else if (UNLIKELY(rd == NULL)) {
 		free(rv);
 		rv = NULL;
+		rz = 0UL;
 		return NULL;
 	}
 
@@ -356,6 +357,7 @@ co_tbids(const struct co_terms_retval_s *ta)
 	} else if (UNLIKELY(ta == NULL)) {
 		free(rv);
 		rv = NULL;
+		rz = 0U;
 		return NULL;
 	} else if (UNLIKELY(ta->nannos > rz)) {
 		/* scale to number of annos */
