@@ -59,6 +59,11 @@ SUFFIXES += .ccl
 .ccl.c:
 	$(AM_V_GEN) $(top_builddir)/build-aux/cccc < $< > $@ || $(RM) -- $@
 
+## phl->c
+SUFFIXES += .phl
+.phl.c:
+	$(AM_V_GEN) $(top_builddir)/build-aux/phash < $< > $@ || $(RM) -- $@
+
 ## version rules
 version.c: version.c.in $(top_builddir)/.version
 	$(AM_V_GEN) PATH="$(top_builddir)/build-aux:$${PATH}" \
