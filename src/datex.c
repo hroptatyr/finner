@@ -55,40 +55,11 @@ check_y(const char s[static 4U])
 /* just accept 19xx and 20xx dates */
 	switch (s[0U]) {
 	case '1':
-		return s[1U] == '9';
+		return s[1U] == '9' && DIGITP(s[2U]) && DIGITP(s[3U]);
 	case '2':
-		return s[1U] == '0';
+		return s[1U] == '0' && DIGITP(s[2U]) && DIGITP(s[3U]);
 	default:
 		break;
-	}
-	return false;
-}
-
-static bool
-check_m(const char s[static 4U])
-{
-	switch (s[0U]) {
-	case '0':
-		return (unsigned int)(s[1U] ^ '0') > 0U;
-	case '1':
-		return (unsigned int)(s[1U] ^ '0') <= 2U;
-	default:
-		break;
-	}
-	return false;
-}
-
-static bool
-check_d(const char s[static 4U])
-{
-	switch (s[0U]) {
-	case '0':
-		return (unsigned int)(s[1U] ^ '0') > 0U;
-	case '1':
-	case '2':
-		return true;
-	case '3':
-		return (unsigned int)(s[1U] ^ '0') <= 1U;
 	}
 	return false;
 }
@@ -100,7 +71,6 @@ check_d(const char s[static 4U])
 fn_bid_t
 fn_datex_bid(const char *str, size_t len)
 {
-	const char *const ep = str + len;
 	const char *sp = str;
 
 	if (*sp >= 'A' && *sp <= 'Z') {
@@ -114,7 +84,7 @@ fn_datex_bid(const char *str, size_t len)
 			buf[i] = (char)(sp[i] - 0x20);
 		}
 		if (i < 3U || !valid_cc_p(buf)) {
-			goto next;
+			return fn_nul_bid;
 		} else if (i >= len) {
 			/* successful fragment of 3 */
 			return (fn_bid_t){FINNER_DATE, len - 3U, FRAG};
@@ -202,11 +172,10 @@ fn_datex_bid(const char *str, size_t len)
 		default:
 			break;
 		}
+	} else if (len == 4U && check_y(sp)) {
+		return (fn_bid_t){FINNER_DATE, 0U, FRAG};
 	}
-next:
 	return fn_nul_bid;
-	/* bid */
-	return (fn_bid_t){FINNER_DATE, ep - sp, FRAG};
 }
 
 fn_bid_t
