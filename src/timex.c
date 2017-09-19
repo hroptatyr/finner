@@ -120,16 +120,20 @@ good:
 fn_bid_t
 fn_timex_collect(const struct anno_s *av, size_t len)
 {
-	if (av->b.bid == FINNER_TIME && av->b.state == AUX) {
-		/* degrade */
+/* collect num+time(AUX) and time+time(AUX) */
+	fn_tok_t a0 = len > 0U ? av[0U].b.bid : FINNER_TERM;
+	fn_tok_t a1 = len > 1U ? av[1U].b.bid : FINNER_TERM;
+	timex_state_t s0 = len > 0U ? (timex_state_t)av[0U].b.state : UNK;
+	timex_state_t s1 = len > 1U ? (timex_state_t)av[1U].b.state : UNK;
+
+	if (a0 == FINNER_TIME && s0 == AUX) {
 		return (fn_bid_t){FINNER_DEGR, 1U};
-	} else if (len <= 1U) {
-		return fn_nul_bid;
-	} else if (av[1U].b.bid != FINNER_TIME || av[1U].b.state != AUX) {
-		return fn_nul_bid;
+	} else if (a0 == FINNER_NUM && a1 == FINNER_TIME && s1 == AUX) {
+		return (fn_bid_t){FINNER_TIME, 2U};
+	} else if (a0 == FINNER_TIME && a1 == FINNER_TIME && s1 == AUX) {
+		return (fn_bid_t){FINNER_TIME, 2U};
 	}
-	/* otherwise collect */
-	return (fn_bid_t){FINNER_TIME, 2U};
+	return fn_nul_bid;
 }
 
 /* timex.c ends here */

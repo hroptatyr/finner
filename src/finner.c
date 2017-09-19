@@ -493,7 +493,7 @@ co_tcoll(const struct co_terms_retval_s *tb)
 		i += c.span - 1U;
 	}
 	/* special case when there was no copying at all */
-	if (!nc) {
+	if (!lastb) {
 		return tb;
 	}
 	/* copy the rest of the annos */

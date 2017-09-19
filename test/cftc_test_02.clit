@@ -3,7 +3,7 @@
 $ finner anno "${srcdir}/cftc_test_01.txt"
 
  VIX FUTURES - CBOE FUTURES EXCHANGE                                                                     Code-1170E1
-Commitments of Traders - Futures Only, February/date 5/num, 2008/num                
+Commitments of Traders - Futures Only, February 5, 2008/date                
 -------------------------------------------------------------------------------------------------------------------
      :   Total  :                        Reportable Positions                                :   Nonreportable
      :----------------------------------------------------------------------------------------     Positions
@@ -16,7 +16,7 @@ All  :    55,094/num:     5,378/num     23,610/num      2,619/num     40,500/num
 Old  :    55,094/num:     5,378/num     23,610/num      2,619/num     40,500/num     22,213/num     48,497/num     48,442/num:     6,597/num      6,652/num
 Other:         0:         0          0          0          0          0          0          0:         0          0
      :          :                                                                            :
-     :          :          Changes in Commitments from: January/date 29/num, 2008/num                     :
+     :          :          Changes in Commitments from: January 29, 2008/date                     :
      :     1,080/num:      -172/num        911/num       -353/num        110/num     -1,052/num       -415/num       -494/num:     1,495/num      1,574/num
      :          :                                                                            :
      :          :    Percent of Open Interest Represented by Each Category of Trader         :

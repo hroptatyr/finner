@@ -55,40 +55,11 @@ check_y(const char s[static 4U])
 /* just accept 19xx and 20xx dates */
 	switch (s[0U]) {
 	case '1':
-		return s[1U] == '9';
+		return s[1U] == '9' && DIGITP(s[2U]) && DIGITP(s[3U]);
 	case '2':
-		return s[1U] == '0';
+		return s[1U] == '0' && DIGITP(s[2U]) && DIGITP(s[3U]);
 	default:
 		break;
-	}
-	return false;
-}
-
-static bool
-check_m(const char s[static 4U])
-{
-	switch (s[0U]) {
-	case '0':
-		return (unsigned int)(s[1U] ^ '0') > 0U;
-	case '1':
-		return (unsigned int)(s[1U] ^ '0') <= 2U;
-	default:
-		break;
-	}
-	return false;
-}
-
-static bool
-check_d(const char s[static 4U])
-{
-	switch (s[0U]) {
-	case '0':
-		return (unsigned int)(s[1U] ^ '0') > 0U;
-	case '1':
-	case '2':
-		return true;
-	case '3':
-		return (unsigned int)(s[1U] ^ '0') <= 1U;
 	}
 	return false;
 }
@@ -100,7 +71,6 @@ check_d(const char s[static 4U])
 fn_bid_t
 fn_datex_bid(const char *str, size_t len)
 {
-	const char *const ep = str + len;
 	const char *sp = str;
 
 	if (*sp >= 'A' && *sp <= 'Z') {
@@ -114,7 +84,7 @@ fn_datex_bid(const char *str, size_t len)
 			buf[i] = (char)(sp[i] - 0x20);
 		}
 		if (i < 3U || !valid_cc_p(buf)) {
-			goto next;
+			return fn_nul_bid;
 		} else if (i >= len) {
 			/* successful fragment of 3 */
 			return (fn_bid_t){FINNER_DATE, len - 3U, FRAG};
@@ -202,26 +172,44 @@ fn_datex_bid(const char *str, size_t len)
 		default:
 			break;
 		}
+	} else if (len == 4U && check_y(sp)) {
+		return (fn_bid_t){FINNER_DATE, 0U, FRAG};
 	}
-next:
 	return fn_nul_bid;
-	/* bid */
-	return (fn_bid_t){FINNER_DATE, ep - sp, FRAG};
 }
 
 fn_bid_t
 fn_datex_collect(const struct anno_s *av, size_t len)
 {
-	if (av->b.bid == FINNER_DATE && av->b.state == FRAG) {
-		/* degrade */
-		return (fn_bid_t){FINNER_DEGR, 1U};
-	} else if (len <= 1U) {
-		return fn_nul_bid;
-	} else if (av[1U].b.bid != FINNER_DATE || av[1U].b.state != FRAG) {
-		return fn_nul_bid;
+/* allow date+num[+date] and num+date[+date] */
+	fn_tok_t a0 = len > 0U ? av[0U].b.bid : FINNER_TERM;
+	fn_tok_t a1 = len > 1U ? av[1U].b.bid : FINNER_TERM;
+	fn_tok_t a2 = len > 2U ? av[2U].b.bid : FINNER_TERM;
+	datex_state_t s0 = len > 0U ? (datex_state_t)av[0U].b.state : UNK;
+	datex_state_t s1 = len > 1U ? (datex_state_t)av[1U].b.state : UNK;
+	datex_state_t s2 = len > 2U ? (datex_state_t)av[2U].b.state : UNK;
+
+	switch (a0) {
+	case FINNER_NUM:
+		if (a1 == FINNER_DATE && s1 == FRAG) {
+			unsigned int more = a2 == FINNER_DATE && s2 == FRAG;
+			return (fn_bid_t){FINNER_DATE, 2U + more};
+		}
+		break;
+	case FINNER_DATE:
+		if (s0 != FRAG) {
+			;
+		} else if (a1 == FINNER_DATE && s1 == FRAG) {
+			return (fn_bid_t){FINNER_DATE, 2U};
+		} else if (a1 == FINNER_NUM) {
+			unsigned int more = a2 == FINNER_DATE && s2 == FRAG;
+			return (fn_bid_t){FINNER_DATE, 2U + more};
+		}
+		break;
+	default:
+		break;
 	}
-	/* otherwise collect */
-	return (fn_bid_t){FINNER_DATE, 3U};
+	return fn_nul_bid;
 }
 
 /* datex.c ends here */
