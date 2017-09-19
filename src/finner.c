@@ -216,6 +216,7 @@ static const struct co_terms_retval_s {
 	} else if (UNLIKELY(rd == NULL)) {
 		free(rv);
 		rv = NULL;
+		rz = 0UL;
 		return NULL;
 	}
 
@@ -356,6 +357,7 @@ co_tbids(const struct co_terms_retval_s *ta)
 	} else if (UNLIKELY(ta == NULL)) {
 		free(rv);
 		rv = NULL;
+		rz = 0U;
 		return NULL;
 	} else if (UNLIKELY(ta->nannos > rz)) {
 		/* scale to number of annos */
@@ -385,12 +387,7 @@ co_tbids(const struct co_terms_retval_s *ta)
 		b = finner_bid(tp, tz);
 
 		/* sanitise and maybe cut the whole thing */
-		if (!b.bid) {
-			if (UNLIKELY(b.leftover || b.state)) {
-				/* that's rubbish */
-				b = fn_nul_bid;
-			}
-		} else if (b.leftover) {
+		if (b.leftover) {
 			const size_t cz = b.leftover;
 
 			if (LIKELY(cz < tz)) {
@@ -463,11 +460,6 @@ co_tcoll(const struct co_terms_retval_s *tb)
 		} else if (i == 0U && UNLIKELY(!c.span)) {
 			/* huh?  this must be broken */
 			continue;
-		} else if (c.bid == FINNER_DEGR) {
-			/* degrading */
-			lastb = i + c.span;
-			i += c.span - 1U;
-			continue;
 		}
 		/* copy all tokens from LASTB to I, if space there is */
 		if (UNLIKELY(nc + (i - lastb) + c.span + 1U > rz)) {
@@ -483,20 +475,21 @@ co_tcoll(const struct co_terms_retval_s *tb)
 		       tb->annos + lastb, (i - lastb) * sizeof(*rv->annos));
 		/* adjust */
 		nc += (i - lastb);
-		lastb = i;
+		lastb = i + (c.bid == FINNER_DEGR);
 
 		if (UNLIKELY(!c.span)) {
 			/* we've got to cut this short */
 			rv->bbox.end = tb->annos[i - 1U].x.end;
 			break;
+		} else if (c.bid != FINNER_DEGR) {
+			/* merge the extents */
+			rv->annos[nc].x.sta = tb->annos[i].x.sta;
+			rv->annos[nc].x.end = tb->annos[i + c.span - 1U].x.end;
+			/* now copy the beef */
+			rv->annos[nc].b = c;
+			/* that's it */
+			nc++;
 		}
-		/* merge the extents */
-		rv->annos[nc].x.sta = tb->annos[i].x.sta;
-		rv->annos[nc].x.end = tb->annos[i + c.span - 1U].x.end;
-		/* now copy the beef */
-		rv->annos[nc].b = c;
-		/* that's it */
-		nc++;
 		i += c.span - 1U;
 	}
 	/* special case when there was no copying at all */
