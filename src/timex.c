@@ -79,6 +79,10 @@ fn_timex_bid(const char *str, size_t len)
 			if (*++sp == '.' && sp < ep) {
 				sp++;
 			}
+			/* make sure the string ends here */
+			if (sp < ep) {
+				break;
+			}
 			s = AUX;
 			goto good;
 		default:
@@ -86,6 +90,7 @@ fn_timex_bid(const char *str, size_t len)
 		}
 		return fn_nul_bid;
 	}
+	/* try 14h30 or 14:30 or the likes */
 	sp++;
 	sp += DIGITP(*sp);
 	if (sp >= ep || !SEPARP(*sp)) {
