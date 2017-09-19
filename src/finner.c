@@ -387,12 +387,7 @@ co_tbids(const struct co_terms_retval_s *ta)
 		b = finner_bid(tp, tz);
 
 		/* sanitise and maybe cut the whole thing */
-		if (!b.bid) {
-			if (UNLIKELY(b.leftover || b.state)) {
-				/* that's rubbish */
-				b = fn_nul_bid;
-			}
-		} else if (b.leftover) {
+		if (b.leftover) {
 			const size_t cz = b.leftover;
 
 			if (LIKELY(cz < tz)) {
