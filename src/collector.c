@@ -42,6 +42,7 @@
 #include "amt.h"
 #include "num.h"
 #include "timex.h"
+#include "datex.h"
 
 
 /* public api */
@@ -58,6 +59,7 @@ finner_collect(const struct anno_s *av, size_t len)
 	/* start the bidding */
 	CHECK(fn_amt_collect);
 	CHECK(fn_timex_collect);
+	CHECK(fn_datex_collect);
 	CHECK(fn_num_collect);
 	return fn_nul_bid;
 }
