@@ -146,7 +146,20 @@ valid_cc_p(const char cc[static 2U])\n\
 	if (cc[0U] >= 'A' && cc[0U] <= 'Z' &&\n\
 	    cc[1U] >= 'A' && cc[1U] <= 'Z' &&\n\
 	    cc[2U] >= 'A' && cc[2U] <= 'Z') {\n\
-		return (_cc BEGINNING_WITH(cc[0U]) & ALLOW(cc[1U] ^ cc[2U]));\n\
+		static const char _c[] = {");
+		for (char c = 'A'; c <= 'Z'; c++) {
+			for (size_t i = 0U; i < lnt; i++) {
+				if (lst[i].cc[0U] == c) {
+			printf("\
+			['%c'^'%c'] = '%c',\n", lst[i].cc[1U], lst[i].cc[2U], lst[i].cc[2U]);
+				}
+			}
+		}
+		puts("\
+		};\n\
+\n\
+		return (_cc BEGINNING_WITH(cc[0U]) & ALLOW(cc[1U] ^ cc[2U])) &&\n\
+			_c[cc[1U]^cc[2U]] == cc[2U];\n\
 	}");
 
 	puts("\
