@@ -116,7 +116,7 @@ fn_unit_1_bid(const char *str, size_t len)
 		goto illion;
 
 	illion:
-		if (sp + 6U > ep || memcmp(sp, "illion", 6U)) {
+		if (sp + 6U != ep || memcmp(sp, "illion", 6U)) {
 			/* nope, not an illion of any kind */
 			guess = UNK;
 		}
