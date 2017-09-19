@@ -181,10 +181,7 @@ fn_datex_bid(const char *str, size_t len)
 fn_bid_t
 fn_datex_collect(const struct anno_s *av, size_t len)
 {
-	if (av->b.bid == FINNER_DATE && av->b.state == FRAG) {
-		/* degrade */
-		return (fn_bid_t){FINNER_DEGR, 1U};
-	} else if (len <= 1U) {
+	if (len <= 1U) {
 		return fn_nul_bid;
 	} else if (av[1U].b.bid != FINNER_DATE || av[1U].b.state != FRAG) {
 		return fn_nul_bid;
