@@ -53,7 +53,6 @@ fn_ccysym_bid(const char *str, size_t len)
 	const char *sp = str;
 	const char *const ep = str + len;
 	iso4217_t c = UNK;
-	uintptr_t s = 0U;
 
 	/* dollars first */
 	if (len >= 2U && sp[1U] == '$') {
@@ -213,7 +212,10 @@ fin:
 	/* next must be EP or a digit */
 	if (sp < ep && !DIGITP(*sp)) {
 		return fn_nul_bid;
+	} else if (!c) {
+		return fn_nul_bid;
 	}
+	uintptr_t s = 0U;
 	memcpy(&s, iso4217[c].sym, 4U);
 	return (fn_bid_t){FINNER_CCY, ep - sp, s};
 }
