@@ -77,6 +77,9 @@ fn_ccysym_bid(const char *str, size_t len)
 		goto fin;
 	} else if (len >= 3U && sp[2U] == '$') {
 		switch (*sp) {
+		case 'H':
+			c = sp[1U] == 'K' ? HKD : UNK;
+			break;
 		case 'A':
 			c = sp[1U] == 'U' ? AUD : UNK;
 			break;
