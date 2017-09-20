@@ -61,14 +61,32 @@ fn_ccysym_bid(const char *str, size_t len)
 		case 'A':
 			c = AUD;
 			break;
+		case 'B':
+			c = BSD;
+			break;
 		case 'C':
 			c = CAD;
+			break;
+		case 'G':
+			c = GYD;
 			break;
 		case 'S':
 			c = SGD;
 			break;
 		case 'R':
 			c = BRL;
+			break;
+		case 'L':
+			c = LRD;
+			break;
+		case 'N':
+			c = NAD;
+			break;
+		case 'Z':
+			c = ZWL;
+			break;
+		case 'J':
+			c = JMD;
 			break;
 		default:
 			return fn_nul_bid;
@@ -83,14 +101,38 @@ fn_ccysym_bid(const char *str, size_t len)
 		case 'A':
 			c = sp[1U] == 'U' ? AUD : UNK;
 			break;
+		case 'G':
+			c = sp[1U] == 'Y' ? GYD : UNK;
+			break;
 		case 'N':
-			c = sp[1U] == 'Z' ? NZD : UNK;
+			c = sp[1U] == 'Z' ? NZD
+				: sp[1U] == 'T' ? TWD
+				: UNK;
 			break;
 		case 'S':
-			c = sp[1U] == 'G' ? SGD : UNK;
+			c = sp[1U] == 'G' ? SGD
+				: sp[1U] == 'I' ? SBD
+				: UNK;
 			break;
 		case 'U':
 			c = sp[1U] == 'S' ? USD : UNK;
+			break;
+		case 'B':
+			c = sp[1U] == 'Z' ? BZD
+				: sp[1U] == 'D' ? BMD
+				: UNK;
+			break;
+		case 'C':
+			c = sp[1U] == 'I' ? KYD : UNK;
+			break;
+		case 'E':
+			c = sp[1U] == 'C' ? XCD : UNK;
+			break;
+		case 'F':
+			c = sp[1U] == 'J' ? FJD : UNK;
+			break;
+		case 'T':
+			c = sp[1U] == 'T' ? TTD : UNK;
 			break;
 		default:
 			return fn_nul_bid;
@@ -131,6 +173,12 @@ fn_ccysym_bid(const char *str, size_t len)
 	case 'z':
 		if (len >= 3U && *sp++ == '\xc5' && *sp++ == '\x82') {
 			c = PLN;
+			break;
+		}
+		return fn_nul_bid;
+	case 'B':
+		if (len >= 4U && *sp++ == 'd' && *sp++ == 's' && *sp++ == '$') {
+			c = BBD;
 			break;
 		}
 		return fn_nul_bid;
