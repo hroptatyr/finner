@@ -164,7 +164,8 @@ fn_ccysym_bid(const char *str, size_t len)
 		c = USD;
 		break;
 	case 'R':
-		if (len >= 2U && *sp++ == 'M') {
+		if (len >= 2U && *sp == 'M') {
+			sp++;
 			c = MYR;
 			break;
 		}
