@@ -48,3 +48,26 @@ finner.
 A somewhat more comprehensive tokeniser, based on Unicode's character
 classes (and therefore with full UTF8 support) is `terms(1)` from the
 [glod project](http://www.fresse.org/glod/).
+
+
+Example
+-------
+
+A simple showcase:
+
+    $ echo '5 May 2015 Issue of $500,000,000 0.875 percent' | finner anno
+    5 May 2015/date Issue of $500,000,000/amt(USD) 0.875 percent/num(*0.01)
+
+Or alternatively
+
+    $ echo '5 May 2015 Issue of $500,000,000 0.875 percent' | finner extr
+    5 May 2015      date    [0,10)
+    5       num     [0,1)
+    May     date    [2,5)
+    2015    date    [6,10)
+    $ 500,000,000   amt(USD)        [20,32)
+    $       ccy(USD)        [20,21)
+    500,000,000     num     [21,32)
+    0.875 percent   num(*0.01)      [33,46)
+    0.875   num     [33,38)
+    percent unit(*0.01)     [39,46)
