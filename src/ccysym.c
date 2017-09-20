@@ -117,9 +117,21 @@ fn_ccysym_bid(const char *str, size_t len)
 		}
 		return fn_nul_bid;
 	case '$':
-		/* USD */
 		c = USD;
 		break;
+	case 'R':
+		if (len >= 2U && *sp++ == 'M') {
+			c = MYR;
+			break;
+		}
+		c = ZAR;
+		break;
+	case 'z':
+		if (len >= 3U && *sp++ == '\xc5' && *sp++ == '\x82') {
+			c = PLN;
+			break;
+		}
+		return fn_nul_bid;
 
 	case '\xc2':
 		/* GBP, JPY */
