@@ -231,8 +231,8 @@ typedef enum {
 	XXX,
 	YER,
 	ZAR,
-	ZMK,
-	ZWD,
+	ZMW,
+	ZWL,
 
 	/* obsolete ... kept for historical purposes */
 	ADF,
@@ -330,9 +330,13 @@ typedef enum {
 	YUR,
 	YUS,
 	ZAL,
+	ZMK,
 	ZRN,
 	ZRZ,
 	ZWC,
+	ZWD,
+	ZWN,
+	ZWR,
 } iso4217_t;
 
 #endif	/* INCLUDED_iso4217_h_ */

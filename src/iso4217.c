@@ -211,8 +211,8 @@ const struct iso4217_s iso4217[] = {
 	[XXX] = {"XXX", 999, -1},
 	[YER] = {"YER", 886, 2},
 	[ZAR] = {"ZAR", 710, 2},
-	[ZMK] = {"ZMK", 894, 2},
-	[ZWD] = {"ZWD", 716, 2},
+	[ZMW] = {"ZMW", 967, 2},
+	[ZWL] = {"ZWD", 932, 2},
 
 	/* obsolete ... kept for historical purposes */
 	[ADF] = {"ADF",  -1, 2},
@@ -310,9 +310,13 @@ const struct iso4217_s iso4217[] = {
 	[YUR] = {"YUR",  -1, -1},
 	[YUS] = {"YUS",  -1, -1},
 	[ZAL] = {"ZAL", 991, -1},
+	[ZMK] = {"ZMK", 894, 2},
 	[ZRN] = {"ZRN", 180, -1},
 	[ZRZ] = {"ZRZ",  -1, -1},
 	[ZWC] = {"ZWC",  -1, -1},
+	[ZWD] = {"ZWD", 716, 2},
+	[ZWN] = {"ZWN", 942, 2},
+	[ZWR] = {"ZWR", 935, 2},
 };
 
 /* iso4217.c ends here */
