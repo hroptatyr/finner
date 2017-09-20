@@ -34,6 +34,7 @@ libfinner_a_SOURCES += sedol.c sedol.h
 libfinner_a_SOURCES += ccy.c ccy.h
 EXTRA_libfinner_a_SOURCES += ccy-cc.ccl
 BUILT_SOURCES += ccy-cc.c
+libfinner_a_SOURCES += iso4217.c iso4217.h
 libfinner_a_SOURCES += fxpair.c fxpair.h
 EXTRA_libfinner_a_SOURCES += fxpair-cc.ccl
 BUILT_SOURCES += fxpair-cc.c
