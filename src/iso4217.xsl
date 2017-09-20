@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+  xmlns:s="http://exslt.org/strings"
   version="1.0">
   <!-- generate iso4217.[ch] from
     -  https://www.currency-iso.org/en/home/tables/table-a1.html -->
@@ -29,7 +30,7 @@
       <xsl:text>] = {"</xsl:text>
       <xsl:value-of select="Ccy"/>
       <xsl:text>", </xsl:text>
-      <xsl:value-of select="CcyNbr"/>
+      <xsl:value-of select="s:align(number(CcyNbr), '   ', 'right')"/>
       <xsl:text>, </xsl:text>
       <xsl:choose>
         <xsl:when test="number(CcyMnrUnts) = number(CcyMnrUnts)">
