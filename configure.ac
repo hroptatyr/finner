@@ -3,7 +3,7 @@ dnl Autoconf startup.
 dnl -------------------------------------------------------------------------
 
 AC_PREREQ([2.63])
-AC_INIT([finner], [0.1.0.GIT], [https://github.com/hroptatyr/finner])
+AC_INIT([finner], [0.2.0], [https://github.com/hroptatyr/finner])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_MACRO_DIR([m4])

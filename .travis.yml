@@ -13,10 +13,15 @@ script:
   - ./configure || { cat config.log; false; }
   - make clean all check distcheck || { cat test/test-suite.log; false; }
 
-## whitelist
-branches:
-  only:
-    - master
+deploy:
+  provider: releases
+  api_key:
+    secure: T/8soxYLzEYsOYLGdnIVBxk+gjBEfgLuwgksHE64A7KBh9rfjs/Cc2mU/SW37ytBPD6hWyy60rbX3ywERlXDO56Xghw5T4sA6U/qjJeIe80rPfCw0hldPvwRWlcWjaRQMY3fVeKCS4QQrF6pyn7MwtorMzMUWMbD1asPcM9lysU=
+  file_glob: true
+  file: finner-*.tar.xz
+  skip_cleanup: true
+  on:
+    tags: true
 
 notifications:
   email:

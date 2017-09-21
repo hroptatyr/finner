@@ -1,5 +1,5 @@
 name: finner
-version: '0.1.0-GIT'
+version: '0.2.0'
 summary: Financial terms NER
 description: |
     Command-line tool to detect all kinds of entities in
