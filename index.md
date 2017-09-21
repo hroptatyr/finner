@@ -2,7 +2,7 @@
 title: finner
 project: finner
 layout: project
-latest: https://github.com/hroptatyr/finner/releases/download/v0.1.0/finner-0.1.0.tar.xz
+latest: https://github.com/hroptatyr/finner/releases/download/v0.2.0/finner-0.2.0.tar.xz
 ---
 
 rorqual (finner)
