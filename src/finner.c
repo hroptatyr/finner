@@ -350,7 +350,6 @@ co_tbids(const struct co_terms_retval_s *ta)
 
 #define TBIDS_EXTRA	(sizeof(*rv) / sizeof(*rv->annos))
 	_Static_assert(TBIDS_EXTRA > 0U, "tbids array type is bigger than header");
-
 	if (UNLIKELY(rv == NULL && ta == NULL)) {
 		/* just return */
 		return NULL;
