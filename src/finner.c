@@ -374,7 +374,7 @@ co_tbids(const struct co_terms_retval_s *ta)
 
 	rebid:
 		/* resize? */
-		if (nb > rz) {
+		if (nb >= rz) {
 			const size_t olz = rz + TBIDS_EXTRA;
 			const size_t nuz = ROUNDTO(2U * olz, 4096U);
 
