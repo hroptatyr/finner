@@ -171,7 +171,7 @@ static const struct co_snarf_retval_s {
 	return 0;
 }
 
-static const struct co_terms_retval_s {
+static struct co_terms_retval_s {
 	union {
 		struct {
 			const char *base;
@@ -341,8 +341,8 @@ static const struct co_terms_retval_s {
  * slot is then reused to point to the index of the newly created
  * half-term (behind anything in TA->ANNOS).  The second half is
  * stored in the slot behind it. */
-static const struct co_terms_retval_s*
-co_tbids(const struct co_terms_retval_s *ta)
+static struct co_terms_retval_s*
+co_tbids(struct co_terms_retval_s *ta)
 {
 	static struct co_terms_retval_s *rv;
 	static size_t rz;
@@ -350,6 +350,7 @@ co_tbids(const struct co_terms_retval_s *ta)
 
 #define TBIDS_EXTRA	(sizeof(*rv) / sizeof(*rv->annos))
 	_Static_assert(TBIDS_EXTRA > 0U, "tbids array type is bigger than header");
+
 	if (UNLIKELY(rv == NULL && ta == NULL)) {
 		/* just return */
 		return NULL;
@@ -402,6 +403,31 @@ co_tbids(const struct co_terms_retval_s *ta)
 				/* otherwise it's rubbish again */
 				b = fn_nul_bid;
 			}
+		} else if (!b.bid) {
+			/* check for soft separators */
+			size_t fj, ej;
+
+			/* find first soft separator */
+			for (fj = 0U; fj < tz &&
+				     (unsigned char)(tp[fj] - ' ') >= 0x10U;
+			     fj++);
+			/* find end of soft-sep streak */
+			for (ej = fj + 1U; ej < tz &&
+				     (unsigned char)(tp[ej] - ' ') < 0x10U;
+			     ej++);
+			if (ej < tz) {
+				/* construct thing we're bidding for */
+				tz = fj;
+				x.end = x.sta + fj;
+
+				/* change I-th TA by side-effect */
+				ta->annos[i].x.sta += ej;
+
+				/* just so we see the rest
+				 * in the next iteration */
+				i--;
+				goto rebid;
+			}
 		}
 
 		/* assign and move on */
@@ -420,8 +446,8 @@ co_tbids(const struct co_terms_retval_s *ta)
  *
  * Go through bids present in TB and merge adjacent ones into an
  * annotated collection. */
-static const struct co_terms_retval_s*
-co_tcoll(const struct co_terms_retval_s *tb)
+static struct co_terms_retval_s*
+co_tcoll(struct co_terms_retval_s *tb)
 {
 	static struct co_terms_retval_s *rv;
 	static size_t rz;
@@ -631,7 +657,7 @@ proc1(const struct ctx_s *ctx, const char *fn)
 	ctxcpy.abs = 0U;
 	for (ssize_t npr = 0;; ctxcpy.abs += npr) {
 		const struct co_snarf_retval_s *rd;
-		const struct co_terms_retval_s *tv;
+		struct co_terms_retval_s *tv;
 
 		rd = co_snarf(fd, npr);
 		tv = co_terms(rd);
