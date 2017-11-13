@@ -1,6 +1,7 @@
 #!/usr/bin/clitoris  ## -*- shell-script -*-
 
 $ finner extr "${srcdir}/cftc_test_01.txt" | tr '$' '@'
+1170E1	wkn	[111,117)
 February 5, 2008	date	[157,173)
 February	date	[157,165)
 5	num	[166,167)
