@@ -1,6 +1,6 @@
 /*** ccysym.c -- checker for currencies expressed by symbols
  *
- * Copyright (C) 2014-2015 Sebastian Freundt
+ * Copyright (C) 2014-2018 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
@@ -38,8 +38,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+#include "finner.h"
 #include "nifty.h"
-#include "ccysym.h"
 
 #include "iso4217.h"
 

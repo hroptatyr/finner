@@ -1,6 +1,6 @@
 /*** timex.c -- checker for times
  *
- * Copyright (C) 2014-2017 Sebastian Freundt
+ * Copyright (C) 2014-2018 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
@@ -39,8 +39,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <assert.h>
+#include "finner.h"
 #include "nifty.h"
-#include "timex.h"
 
 #define DIGITP(x)	(((unsigned char)((x) ^ '0')) < 10U)
 #define SEPARP(x)	((x) == ':' || (x) == 'h')

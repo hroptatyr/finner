@@ -1,6 +1,6 @@
 /*** bidder.c -- determine token types
  *
- * Copyright (C) 2014-2015 Sebastian Freundt
+ * Copyright (C) 2014-2018 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
@@ -44,7 +44,6 @@
 #include "isin.h"
 #include "cusip.h"
 #include "sedol.h"
-#include "ccy.h"
 #include "fxpair.h"
 #include "num.h"
 #include "wkn.h"
@@ -54,7 +53,6 @@
 #include "ccysym.h"
 #include "lei.h"
 #include "unit-1.h"
-#include "amt.h"
 
 const char *const finner_bidstr[FINNER_NTAGS] = {
 	[FINNER_TERM] = "term",
@@ -63,26 +61,18 @@ const char *const finner_bidstr[FINNER_NTAGS] = {
 	[FINNER_LEI] = "lei",
 	[FINNER_CUSIP] = "cusip",
 	[FINNER_SEDOL] = "sedol",
-	[FINNER_CCY] = "ccy",
 	[FINNER_FXPAIR] = "fxpair",
 	[FINNER_NUM] = "num",
 	[FINNER_WKN] = "wkn",
 	[FINNER_DATE] = "date",
 	[FINNER_TIME] = "time",
 	[FINNER_UNIT_1] = "unit",
-
-	/* collectors */
-	[FINNER_AMT] = "amt",
 };
 
 fn_prs_f finner_statestr[FINNER_NTAGS] = {
 	[FINNER_FXPAIR] = fn_fxpair_prs,
-	[FINNER_CCY] = fn_ccy_prs,
 	[FINNER_UNIT_1] = fn_unit_1_prs,
 	[FINNER_NUM] = fn_num_prs,
-
-	/* collectors */
-	[FINNER_AMT] = fn_amt_prs,
 };
 
 
@@ -104,14 +94,11 @@ finner_bid(const char *str, size_t len)
 	CHECK(fn_cusip_bid);
 	CHECK(fn_sedol_bid);
 	CHECK(fn_fxpair_bid);
-	CHECK(fn_ccy_bid);
 	CHECK(fn_date_bid);
 	CHECK(fn_datex_bid);
 	CHECK(fn_timex_bid);
 	/* high risk stuff last */
-	CHECK(fn_wkn_bid);
 	CHECK(fn_num_bid);
-	CHECK(fn_ccysym_bid);
 	CHECK(fn_unit_1_bid);
 	return fn_nul_bid;
 }

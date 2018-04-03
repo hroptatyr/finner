@@ -1,6 +1,6 @@
 /*** wkn.c -- checker for WKNs, very high in false positives
  *
- * Copyright (C) 2014-2015 Sebastian Freundt
+ * Copyright (C) 2014-2018 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
@@ -38,44 +38,50 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
-#include <assert.h>
+#include <ctype.h>
+#include "finner.h"
 #include "nifty.h"
-#include "wkn.h"
+
+static const char*
+wkn(fn_state_t UNUSED(st))
+{
+	return "WKN";
+}
 
 
-/* class implementation */
-fn_bid_t
-fn_wkn_bid(const char *str, size_t len)
+fn_bnu_t
+fn_wkn(const char *str, size_t len)
 {
 	size_t ndigits = 0U;
 
-	if (len != 6U) {
-		return fn_nul_bid;
+	if (len < 6U) {
+	nope:
+		return (fn_bnu_t){NULL};
 	}
 	/* we need at least one digit */
 	for (size_t i = 0U; i < 6U; i++) {
 		if ((unsigned char)(str[i] ^ '0') < 10U) {
 			ndigits++;
 		} else if (str[i] < 'A') {
-			return fn_nul_bid;
+			goto nope;
 		} else if (str[i] > 'Z') {
-			return fn_nul_bid;
+			goto nope;
 		} else if (str[i] == 'I') {
-			return fn_nul_bid;
+			goto nope;
 		} else if (str[i] == 'O') {
-			return fn_nul_bid;
+			goto nope;
 		}
 	}
 	if (!ndigits) {
 		/* check for CBKTLR und CBKBZR */
 		if (str[0U] != 'C' ||
 		    (memcmp(str, "CBKTLR", 6U) && memcmp(str, "CBKBZR", 6U))) {
-			return fn_nul_bid;
+			goto nope;
 		}
 	}
 
 	/* bid bid bid */
-	return (fn_bid_t){FINNER_WKN};
+	return (fn_bnu_t){wkn};
 }
 
 /* wkn.c ends here */

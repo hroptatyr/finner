@@ -1,6 +1,6 @@
-/*** ccy.c -- checker for currencies
+/*** ccy.c -- checker for CCYs, very high in false positives
  *
- * Copyright (C) 2014-2015 Sebastian Freundt
+ * Copyright (C) 2014-2018 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
@@ -37,39 +37,23 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <assert.h>
+#include "finner.h"
 #include "nifty.h"
-#include "ccy.h"
 
-/* allowed isin country codes */
-#include "ccy-cc.c"
-
-
-/* class implementation */
-fn_bid_t
-fn_ccy_bid(const char *str, size_t len)
+static const char*
+ccy(fn_state_t UNUSED(st))
 {
-	uintptr_t s = 0U;
-
-	/* common cases first */
-	if (len < 3U) {
-		return fn_nul_bid;
-	} else if (!valid_cc_p(str)) {
-		return fn_nul_bid;
-	} else if (len > 3U && ((unsigned char)(str[3U] ^ '0')) >= 10U) {
-		return fn_nul_bid;
-	}
-	memcpy(&s, str, 3U);
-	/* bid just any number really */
-	return (fn_bid_t){FINNER_CCY, len - 3U, s};
+	return "CCY";
 }
 
-const char*
-fn_ccy_prs(uintptr_t state)
+
+fn_bnu_t
+fn_ccy(const char *str, size_t len)
 {
-	static char buf[4U];
-	memcpy(buf, &state, sizeof(buf));
-	return buf;
+	/* bid bid bid */
+	return (fn_bnu_t){ccy};
 }
 
 /* ccy.c ends here */

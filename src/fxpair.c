@@ -1,6 +1,6 @@
 /*** fxpair.c -- checker for FX pairs
  *
- * Copyright (C) 2014-2015 Sebastian Freundt
+ * Copyright (C) 2014-2018 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
@@ -38,8 +38,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+#include "finner.h"
 #include "nifty.h"
-#include "fxpair.h"
 
 /* allowed isin country codes */
 #include "fxpair-cc.c"

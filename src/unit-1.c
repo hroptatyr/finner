@@ -1,6 +1,6 @@
 /*** unit-1.c -- unitless factors
  *
- * Copyright (C) 2014-2017 Sebastian Freundt
+ * Copyright (C) 2014-2018 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
@@ -38,8 +38,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+#include "finner.h"
 #include "nifty.h"
-#include "unit-1.h"
 
 typedef enum {
 	UNK,
@@ -52,10 +52,33 @@ typedef enum {
 	BPOINT,
 } unit_1_t;
 
+static const char*
+unit_1(fn_state_t st)
+{
+	switch (st) {
+	case BILLION:
+		return "*1000000000";
+	case MILLION:
+		return "*1000000";
+	case THOUSAND:
+		return "*1000";
+	case TRILLION:
+		return "*1000000000000";
+	case PERCENT:
+		return "*0.01";
+	case BPOINT:
+		return "*0.0001";
+	case HUNDRED:
+		return "*100";
+	default:
+		break;
+	}
+	return "1";
+}
+
 
-/* class implementation */
-fn_bid_t
-fn_unit_1_bid(const char *str, size_t len)
+fn_bnu_t
+fn_unit_1(const char *str, size_t len)
 {
 	const char *sp = str;
 	const char *const ep = str + len;
@@ -124,33 +147,9 @@ fn_unit_1_bid(const char *str, size_t len)
 		break;
 	}
 	if (guess == UNK) {
-		return fn_nul_bid;
+		return (fn_bnu_t){};
 	}
-	return (fn_bid_t){FINNER_UNIT_1, ep - sp, guess};
-}
-
-const char*
-fn_unit_1_prs(uintptr_t state)
-{
-	switch (state) {
-	case BILLION:
-		return "*1000000000";
-	case MILLION:
-		return "*1000000";
-	case THOUSAND:
-		return "*1000";
-	case TRILLION:
-		return "*1000000000000";
-	case PERCENT:
-		return "*0.01";
-	case BPOINT:
-		return "*0.0001";
-	case HUNDRED:
-		return "*100";
-	default:
-		break;
-	}
-	return "1";
+	return (fn_bnu_t){unit_1, guess};
 }
 
 /* unit-1.c ends here */

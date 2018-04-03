@@ -1,6 +1,6 @@
 /*** num.c -- checker for numbers
  *
- * Copyright (C) 2014-2017 Sebastian Freundt
+ * Copyright (C) 2014-2018 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
@@ -39,96 +39,25 @@
 #include <stdio.h>
 #include <assert.h>
 #include "nifty.h"
-#include "num.h"
-#include "unit-1.h"
+#include "finner.h"
+
+static const char*
+num(fn_state_t UNUSED(st))
+{
+	return "num";
+}
 
 
-/* class implementation */
-fn_bid_t
-fn_num_bid(const char *str, size_t len)
+fn_bnu_t
+fn_num(const char *str, size_t len)
 {
-	const char *sp = str;
-	const char *const ep = str + len;
-	fn_bid_t tmp = fn_nul_bid;
+	if ((unsigned char)(str[len] ^ '0') < 10U) {
+		/* there's more */
+		return (fn_bnu_t){NULL};
+	}
 
-	if (UNLIKELY(*sp == '-')) {
-		/* allow leading `-' */
-		sp++;
-	}
-	if (*sp == '0') {
-		/* demand decimal dot now */
-		if (*++sp != '.') {
-			return fn_nul_bid;
-		}
-	} else if (!(*sp >= '1' && *sp <= '9')) {
-		return fn_nul_bid;
-	}
-	/* only digits for now */
-	for (sp++; sp < ep; sp++) {
-		if (!(*sp >= '0' && *sp <= '9')) {
-			break;
-		}
-	}
-	if (sp < ep) {
-		/* might be `.' or `,' */
-		switch (*sp++) {
-		case '.':
-		dot:
-			/* only allow digits from now on */
-			for (; sp < ep; sp++) {
-				if (!(*sp >= '0' && *sp <= '9')) {
-					break;
-				}
-			}
-			break;
-		case ',':
-		rechk:
-			/* allow digits */
-			for (size_t i = 3U; i && sp < ep; sp++, i--) {
-				if (!(*sp >= '0' && *sp <= '9')) {
-					return fn_nul_bid;
-				}
-			}
-			if (sp >= ep) {
-				break;
-			} else if (*sp == ',') {
-				/* ah, another comma group */
-				sp++;
-				goto rechk;
-			} else if (*sp == '.') {
-				sp++;
-				goto dot;
-			}
-		default:
-			/* otherwise check for units */
-			if ((tmp = fn_unit_1_bid(sp, ep - sp)).bid) {
-				/* return collected */
-				break;;
-			}
-			return fn_nul_bid;
-		}
-	}
-	return (fn_bid_t){FINNER_NUM, ep - sp + tmp.leftover, tmp.state};
-}
-
-fn_bid_t
-fn_num_collect(const struct anno_s *av, size_t len)
-{
-/* a number paired with a unit-1 */
-	if (UNLIKELY(len <= 1U)) {
-		return fn_nul_bid;
-	} else if (av[0U].b.bid != FINNER_NUM ||
-		   av[1U].b.bid != FINNER_UNIT_1) {
-		return fn_nul_bid;
-	}
-	return (fn_bid_t){FINNER_NUM, 2U, av[0U].b.state ^ av[1U].b.state};
-}
-
-const char*
-fn_num_prs(uintptr_t s)
-{
-/* this must come from the collection */
-	return fn_unit_1_prs(s);
+	/* bid bid bid */
+	return (fn_bnu_t){num};
 }
 
 /* num.c ends here */

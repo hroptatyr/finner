@@ -1,6 +1,6 @@
 /*** cusip.c -- checker for CUSIPs
  *
- * Copyright (C) 2014-2015 Sebastian Freundt
+ * Copyright (C) 2014-2018 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
@@ -37,8 +37,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "finner.h"
 #include "nifty.h"
-#include "cusip.h"
 
 static unsigned int
 calc_chk(const char *str, size_t len)

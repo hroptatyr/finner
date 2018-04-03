@@ -21,38 +21,35 @@ EXTRA_DIST += version.c.in
 
 noinst_LIBRARIES += libfinner.a
 libfinner_a_SOURCES = finner.h
-libfinner_a_SOURCES += bidder.c bidder.h
-libfinner_a_SOURCES += collector.c collector.h
 EXTRA_libfinner_a_SOURCES =
-libfinner_a_SOURCES += figi.c figi.h
-libfinner_a_SOURCES += isin.c isin.h
+libfinner_a_SOURCES += figi.c
+libfinner_a_SOURCES += isin.c
 EXTRA_libfinner_a_SOURCES += isin-cc.ccl
 BUILT_SOURCES += isin-cc.c
-libfinner_a_SOURCES += lei.c lei.h
-libfinner_a_SOURCES += cusip.c cusip.h
-libfinner_a_SOURCES += sedol.c sedol.h
-libfinner_a_SOURCES += ccy.c ccy.h
-EXTRA_libfinner_a_SOURCES += ccy-cc.ccl
-BUILT_SOURCES += ccy-cc.c
+libfinner_a_SOURCES += lei.c
+libfinner_a_SOURCES += cusip.c
+libfinner_a_SOURCES += sedol.c
 libfinner_a_SOURCES += iso4217.c iso4217.h
-libfinner_a_SOURCES += fxpair.c fxpair.h
+libfinner_a_SOURCES += fxpair.c
 EXTRA_libfinner_a_SOURCES += fxpair-cc.ccl
 BUILT_SOURCES += fxpair-cc.c
-libfinner_a_SOURCES += num.c num.h
-libfinner_a_SOURCES += unit-1.c unit-1.h
-libfinner_a_SOURCES += wkn.c wkn.h
-libfinner_a_SOURCES += date.c date.h
-libfinner_a_SOURCES += datex.c datex.h
+libfinner_a_SOURCES += num.c
+libfinner_a_SOURCES += amt.c
+libfinner_a_SOURCES += unit-1.c unit-1.rl
+libfinner_a_SOURCES += wkn.c
+libfinner_a_SOURCES += ccy.c ccy.rl
+libfinner_a_SOURCES += date.c
+libfinner_a_SOURCES += datex.c
 BUILT_SOURCES += months-cc.c
-libfinner_a_SOURCES += timex.c timex.h
-libfinner_a_SOURCES += ccysym.c ccysym.h
-libfinner_a_SOURCES += amt.c amt.h
+libfinner_a_SOURCES += timex.c
+libfinner_a_SOURCES += ccysym.c
 
 bin_PROGRAMS += finner
 finner_SOURCES = finner.c finner.yuck
 finner_SOURCES += nifty.h
 finner_LDADD = libfinner.a
 BUILT_SOURCES += finner.yucc
+BUILT_SOURCES += finner.rlc
 
 
 ## ccl->c
@@ -74,9 +71,15 @@ version.c: version.c.in $(top_builddir)/.version
 ## yuck rule
 SUFFIXES += .yuck
 SUFFIXES += .yucc
+SUFFIXES += .rl
+SUFFIXES += .rlc
 .yuck.yucc:
 	$(AM_V_GEN) PATH=$(top_builddir)/build-aux:"$${PATH}" \
 		yuck$(EXEEXT) gen -o $@ $<
+
+.rl.rlc:
+	$(AM_V_GEN) PATH=$(top_builddir)/build-aux:"$${PATH}" \
+		ragel -F1 -C -o $@ $<
 
 ## Create preprocessor output (debugging purposes only)
 .c.i:

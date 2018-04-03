@@ -1,6 +1,6 @@
 /*** finner.h -- main snippet
  *
- * Copyright (C) 2014-2015 Sebastian Freundt
+ * Copyright (C) 2014-2018 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
@@ -88,6 +88,15 @@ typedef struct {
 
 #define fn_nul_bid	((fn_bid_t){FINNER_TERM})
 
+typedef intptr_t fn_state_t;
+
+/**
+ * New bidding state. */
+typedef struct {
+	const char *(*print)(fn_state_t state);
+	fn_state_t state;
+} fn_bnu_t;
+
 typedef struct {
 	size_t sta;
 	size_t end;
@@ -97,6 +106,19 @@ struct anno_s {
 	extent_t x;
 	fn_bid_t b;
 };
+
+typedef struct {
+	extent_t x;
+	fn_bnu_t b;
+} annu_t;
+
+
+extern fn_bnu_t fn_wkn(const char*, size_t);
+extern fn_bnu_t fn_num(const char*, size_t);
+extern fn_bnu_t fn_ccy(const char*, size_t);
+extern fn_bnu_t fn_isin(const char*, size_t);
+extern fn_bnu_t fn_amt(const char*, size_t);
+extern fn_bnu_t fn_unit_1(const char*, size_t);
 
 
 /* convenience */
@@ -114,6 +136,14 @@ fn_extent_dist(extent_t a, extent_t b)
 		return a.sta - b.end;
 	}
 	return 0U;
+}
+
+#define eob	'\377'
+
+static inline int
+iseob(int c)
+{
+	return c == eob;
 }
 
 #endif	/* INCLUDED_finner_h_ */
