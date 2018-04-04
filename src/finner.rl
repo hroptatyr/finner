@@ -45,7 +45,7 @@
 		unit_1 @{m(unit_1)} |
 		amt @{c(amt)} |
 		(alnum | "*" | "@" | "#"){8} digit @{c(cusip)} |
-		(consonant | digit){6} digit @{p(sedol)} |
+		(consonant | digit){6} digit @{c(sedol)} |
 		upnum{18} digit{2} @{p(lei)} |
 		empty ;
 
