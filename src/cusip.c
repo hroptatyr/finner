@@ -40,21 +40,28 @@
 #include "finner.h"
 #include "nifty.h"
 
-static unsigned int
-calc_chk(const char *str, size_t len)
+static const char*
+cusip(fn_state_t UNUSED(st))
 {
-/* calculate the check digit for an expanded ISIN */
-	unsigned int sum = 0U;
-	size_t i = 0U;
+	return "CUSIP";
+}
+
+
+fn_bnu_t
+fn_cusip(const char *str, size_t len)
+{
+	uint_fast32_t sum = 0U;
+
+	/* common cases first */
+	if (len < 9U) {
+		return (fn_bnu_t){NULL};
+	}
 
 	/* use the left 8 digits */
-	for (size_t j = 0U; j < 8U && i < len; i++) {
-		unsigned int d;
+	for (size_t i = 0U; i < 8U; i++) {
+		uint_fast32_t d;
 
 		switch (str[i]) {
-		case '-':
-			/* ignore */
-			continue;
 		case '0' ... '9':
 			d = (str[i] ^ '0');
 			break;
@@ -71,47 +78,26 @@ calc_chk(const char *str, size_t len)
 			d = 38;
 			break;
 		default:
-			return 0U;
+			return (fn_bnu_t){NULL};
 		}
 
-		if (j++ % 2U) {
-			d *= 2U;
-		}
+		/* double every other */
+		d <<= i % 2U;
 		sum += (d / 10U) + (d % 10U);
 	}
-	/* check if need to skip optional - */
-	if (LIKELY(i < len) && UNLIKELY(str[i] == '-')) {
-		i++;
-	}
-
-	/* sum can be at most 342, so check digit is */
-	return i << 8U ^ (((400U - sum) % 10U) ^ '0');
-}
-
-
-/* class implementation */
-fn_bid_t
-fn_cusip_bid(const char *str, size_t len)
-{
-	/* common cases first */
-	if (len < 8U || len > 11U) {
-		return fn_nul_bid;
-	}
-
-	with (unsigned int cc = calc_chk(str, len)) {
-		unsigned int consumed = cc >> 8U;
-		char chk = (char)(cc & 0xff);
-
-		if (!cc) {
-			return fn_nul_bid;
-		} else if (consumed != len - 1U) {
-			return fn_nul_bid;
-		} else if (chk != str[consumed]) {
-			return fn_nul_bid;
+	with (uint_fast32_t d = (unsigned char)(str[8U] ^ '0')) {
+		if (d >= 10U) {
+			/* last one must be a digit */
+			return (fn_bnu_t){NULL};
 		}
+		sum += d;
 	}
-	/* bid higher than isin */
-	return (fn_bid_t){FINNER_CUSIP};
+	/* have a look at the check equation */
+	if ((sum %= 10)) {
+		/* check digit don't match */
+		return (fn_bnu_t){NULL};
+	}
+	return (fn_bnu_t){cusip};
 }
 
 /* cusip.c ends here */
