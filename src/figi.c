@@ -99,9 +99,12 @@ fn_figi(const char *str, size_t len)
 		d <<= (i % 2U);
 		sum += (d / 10U) + (d % 10U);
 	}
-	if ((unsigned char)(str[11U] ^ '0') >= 10U) {
-		/* last one must be a digit */
-		return (fn_bnu_t){NULL};
+	with (uint_fast32_t d = (unsigned char)(str[11U] ^ '0')) {
+		if (d >= 10U) {
+			/* last one must be a digit */
+			return (fn_bnu_t){NULL};
+		}
+		sum += d;
 	}
 	/* have a look at the check equation */
 	if ((sum %= 10)) {
