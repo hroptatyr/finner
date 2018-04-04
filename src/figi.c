@@ -4,7 +4,7 @@
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
- * This file is part of numchk.
+ * This file is part of finner.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -41,23 +41,17 @@
 #include "finner.h"
 #include "nifty.h"
 
-static const char*
-figi(fn_state_t UNUSED(st))
-{
-	return "FIGI";
-}
-
 
-fn_bnu_t
+fn_bid_t
 fn_figi(const char *str, size_t len)
 {
 	uint_fast32_t sum = 0U;
 
 	if (len < 12U) {
-		return (fn_bnu_t){NULL};
+		return (fn_bid_t){-1};
 	} else if (str[0U] != 'B' || str[1U] != 'B' || str[2U] != 'G') {
 		/* currently only BB is registered as certified provider */
-		return (fn_bnu_t){NULL};
+		return (fn_bid_t){-1};
 	}
 
 	/* use the left 11 digits */
@@ -92,7 +86,7 @@ fn_figi(const char *str, size_t len)
 			d = 10U + (str[i] - 'A');
 			break;
 		default:
-			return (fn_bnu_t){NULL};
+			return (fn_bid_t){-1};
 		}
 
 		/* double every other */
@@ -102,16 +96,16 @@ fn_figi(const char *str, size_t len)
 	with (uint_fast32_t d = (unsigned char)(str[11U] ^ '0')) {
 		if (d >= 10U) {
 			/* last one must be a digit */
-			return (fn_bnu_t){NULL};
+			return (fn_bid_t){-1};
 		}
 		sum += d;
 	}
 	/* have a look at the check equation */
 	if ((sum %= 10)) {
 		/* check digit don't match */
-		return (fn_bnu_t){NULL};
+		return (fn_bid_t){-1};
 	}
-	return (fn_bnu_t){figi};
+	return S("FIGI");
 }
 
 /* figi.c ends here */

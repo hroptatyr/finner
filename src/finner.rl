@@ -8,8 +8,8 @@
 # pragma warning (disable:2415)
 #endif  /* __INTEL_COMPILER */
 
-#define p(x)	
-#define q(x)	\
+#define dbgpr(x)	
+#define _dbgpr(x)	\
 	fwrite(q, 1, p + 1U - q, stderr); \
 	fputc('\t', stderr); \
 	fputs(#x, stderr); \
@@ -37,13 +37,13 @@
 	amt = ccy " "? (num @{c(num)}) | num " "? ccy ;
 
 	finner =
-		ccy @{c(ccy)} |
+		ccy @{r("ccy")} |
 		upper{2} upnum{9} digit @{c(isin)} |
 		"BBG" (consonant | digit){8} digit @{c(figi)} |
 		upnum{6} @{c(wkn)} |
 		num @{c(num)} |
-		unit_1 @{m(unit_1)} |
-		amt @{c(amt)} |
+		unit_1 |
+		amt @{r("amt")} |
 		(alnum | "*" | "@" | "#"){8} digit @{c(cusip)} |
 		(consonant | digit){6} digit @{c(sedol)} |
 		upnum{18} digit{2} @{c(lei)} |
@@ -54,13 +54,12 @@
 	write data;
 }%%
 
-static annu_t
+static anno_t
 terms1(const char **pp, const char *const s, const char *const pe)
 {
 	const char *p = *pp;
 	const char *q = p;
-	fn_state_t S = 0;
-	annu_t r = {};
+	anno_t r = {-1};
 	int cs;
 
 #if 0
@@ -69,20 +68,15 @@ terms1(const char **pp, const char *const s, const char *const pe)
 	fputs(")\n", stderr);
 #endif
 
-#define state(x)	(S = (intptr_t)(x));
 #define c(x)	\
-	with (fn_bnu_t y = fn_##x(q, p + 1U - q)) { \
-		if (!y.print) { \
+	with (fn_bid_t y = fn_##x(q, p + 1U - q)) { \
+		if (y.state < 0) { \
 			break; \
 		} \
-		p(x); \
-		r = (annu_t){{q - s, p + 1U - s}, y}; \
+		dbgpr(x); \
+		r = (anno_t){y, {q - s, p + 1U - s}}; \
 	}
-#define m(x)	\
-	with (fn_bnu_t y = {fn_##x, S}) { \
-		p(x); \
-		r = (annu_t){{q - s, p + 1U - s}, y}; \
-	}
+#define r(x)	r = (anno_t){S(x), {q - s, p + 1U - s}};
 	%% write init;
 	%% write exec;
 	*pp = p;

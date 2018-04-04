@@ -41,17 +41,4 @@
 #include "finner.h"
 #include "nifty.h"
 
-static const char*
-amt(fn_state_t UNUSED(s))
-{
-	return "amt";
-}
-
-
-fn_bnu_t
-fn_amt(const char *UNUSED(str), size_t UNUSED(len))
-{
-	return (fn_bnu_t){amt};
-}
-
 /* amt.c ends here */

@@ -41,23 +41,17 @@
 #include "nifty.h"
 #include "finner.h"
 
-static const char*
-num(fn_state_t UNUSED(st))
-{
-	return "num";
-}
-
 
-fn_bnu_t
+fn_bid_t
 fn_num(const char *str, size_t len)
 {
 	if ((unsigned char)(str[len] ^ '0') < 10U) {
 		/* there's more */
-		return (fn_bnu_t){NULL};
+		return (fn_bid_t){-1};
 	}
 
 	/* bid bid bid */
-	return (fn_bnu_t){num};
+	return S("num");
 }
 
 /* num.c ends here */

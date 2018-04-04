@@ -42,21 +42,15 @@
 #include "finner.h"
 #include "nifty.h"
 
-static const char*
-wkn(fn_state_t UNUSED(st))
-{
-	return "WKN";
-}
-
 
-fn_bnu_t
+fn_bid_t
 fn_wkn(const char *str, size_t len)
 {
 	size_t ndigits = 0U;
 
 	if (len < 6U || isalnum(str[len]) || iseob(str[len])) {
 	nope:
-		return (fn_bnu_t){NULL};
+		return (fn_bid_t){-1};
 	}
 	/* we need at least one digit */
 	for (size_t i = 0U; i < 6U; i++) {
@@ -81,7 +75,7 @@ fn_wkn(const char *str, size_t len)
 	}
 
 	/* bid bid bid */
-	return (fn_bnu_t){wkn};
+	return S("WKN");
 }
 
 /* wkn.c ends here */

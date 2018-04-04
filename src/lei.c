@@ -4,7 +4,7 @@
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
- * This file is part of numchk.
+ * This file is part of finner.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -39,17 +39,11 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <assert.h>
+#include "finner.h"
 #include "nifty.h"
-#include "lei.h"
-
-static const char*
-lei(fn_state_t UNUSED(st))
-{
-	return "LEI";
-}
 
 
-fn_bnu_t
+fn_bid_t
 fn_lei(const char *str, size_t len)
 {
 	uint_fast8_t buf[40U];
@@ -58,7 +52,7 @@ fn_lei(const char *str, size_t len)
 
 	/* common cases first */
 	if (len < 20U) {
-		return (fn_bnu_t){NULL};
+		return (fn_bid_t){-1};
 	}
 
 	/* expand string first */
@@ -80,17 +74,17 @@ fn_lei(const char *str, size_t len)
 			buf[bsz++] = (unsigned char)(str[i] - 'U');
 			break;
 		default:
-			return (fn_bnu_t){NULL};
+			return (fn_bid_t){-1};
 		}
 	}
 	/* and the last two */
 	with (uint_fast32_t d) {
 		if ((d = (unsigned char)(str[18U] ^ '0')) >= 10U) {
-			return (fn_bnu_t){NULL};
+			return (fn_bid_t){-1};
 		}
 		buf[bsz++] = d;
 		if ((d = (unsigned char)(str[19U] ^ '0')) >= 10U) {
-			return (fn_bnu_t){NULL};
+			return (fn_bid_t){-1};
 		}
 		buf[bsz++] = d;
 	}
@@ -106,10 +100,10 @@ fn_lei(const char *str, size_t len)
 	}
 	if ((sum %= 97U) - 1U) {
 		/* doesn't check out */
-		return (fn_bnu_t){NULL};
+		return (fn_bid_t){-1};
 	}
 	/* otherwise all's doog */
-	return (fn_bnu_t){lei};
+	return S("LEI");
 }
 
 /* lei.c ends here */

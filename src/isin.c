@@ -4,7 +4,7 @@
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
- * This file is part of numchk.
+ * This file is part of finner.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -45,14 +45,8 @@
 /* allowed isin country codes */
 #include "isin-cc.c"
 
-static const char*
-isin(fn_state_t UNUSED(st))
-{
-	return "ISIN";
-}
-
 
-fn_bnu_t
+fn_bid_t
 fn_isin(const char *str, size_t len)
 {
 	uint_fast8_t buf[24U];
@@ -64,9 +58,9 @@ fn_isin(const char *str, size_t len)
 	size_t k;
 
 	if (UNLIKELY(len < 12U)) {
-		return (fn_bnu_t){NULL};
+		return (fn_bid_t){-1};
 	} else if (!valid_cc_p(str)) {
-		return (fn_bnu_t){NULL};
+		return (fn_bid_t){-1};
 	}
 
 	/* expand the left 11 digits */
@@ -88,12 +82,12 @@ fn_isin(const char *str, size_t len)
 			buf[bsz++] = (unsigned char)(str[i] - 'U');
 			break;
 		default:
-			return (fn_bnu_t){NULL};
+			return (fn_bid_t){-1};
 		}
 	}
 	if ((buf[bsz++] = (unsigned char)(str[11U] ^ '0')) >= 10U) {
 		/* last one must be a digit */
-		return (fn_bnu_t){NULL};
+		return (fn_bid_t){-1};
 	}
 	for (size_t i = k = 0U; i < bsz; i++, k ^= 1U) {
 		uint_fast32_t c = 2U * buf[i];
@@ -104,9 +98,9 @@ fn_isin(const char *str, size_t len)
 	sum = dbl[k ^ 1U] / 2U + dbl[k] + one[k];
 	if ((sum %= 10)) {
 		/* check digit don't match */
-		return (fn_bnu_t){NULL};
+		return (fn_bid_t){-1};
 	}
-	return (fn_bnu_t){isin};
+	return S("ISIN");
 }
 
 /* isin.c ends here */

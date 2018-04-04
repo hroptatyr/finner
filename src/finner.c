@@ -185,9 +185,9 @@ static struct co_terms_retval_s {
 			size_t nannos;
 			extent_t bbox;
 		};
-		annu_t _algn_;
+		anno_t _algn_;
 	};
-	annu_t annos[];
+	anno_t annos[];
 } *co_terms(const struct co_snarf_retval_s *rd)
 {
 	static struct co_terms_retval_s *rv;
@@ -214,13 +214,8 @@ static struct co_terms_retval_s {
 	const char *const ep = rd->buf + rd->bsz;
 	rv->nannos = 0U;
 	while (bp < ep) {
-#if 0
-		puts("looking at");
-		fwrite(bp, 1, ep - bp, stdout);
-		puts("!");
-#endif
-		annu_t a = terms1(&bp, rd->buf, ep);
-		if (!a.b.print) {
+		anno_t a = terms1(&bp, rd->buf, ep);
+		if (a.b.state < 0) {
 			continue;
 		}
 		/* otherwise store extent */
@@ -252,7 +247,7 @@ co_textr(const struct ctx_s *ctx, const struct co_terms_retval_s *ta)
 
 	for (size_t i = 0U; i < ta->nannos; i++) {
 		const extent_t x = ta->annos[i].x;
-		const fn_bnu_t b = ta->annos[i].b;
+		const fn_bid_t b = ta->annos[i].b;
 		const char *tp = ta->base + x.sta;
 		const size_t tz = x.end - x.sta;
 
@@ -260,48 +255,18 @@ co_textr(const struct ctx_s *ctx, const struct co_terms_retval_s *ta)
 			/* stuff beyond the bounding box needs to be fed
 			 * into the buffer again in the next iteration */
 			break;
-#if 0
-		} else if (b.bid || ctx->allp) {
-			if (b.bid < FINNER_NTOKENS) {
-				/* primitive i.e. non-collective token */
-				fwrite(tp, sizeof(*tp), tz, stdout);
-			} else if (i + b.span < ta->nannos) {
-				for (size_t j = 1U; j < b.span; j++) {
-					const extent_t px = ta->annos[i + j].x;
-					const char *pp = ta->base + px.sta;
-					const size_t pz = px.end - px.sta;
-
-					fwrite(pp, sizeof(*pp), pz, stdout);
-					fputc(' ', stdout);
-				}
-				/* write final one */
-				const extent_t px = ta->annos[i + b.span].x;
-				const char *pp = ta->base + px.sta;
-				const size_t pz = px.end - px.sta;
-
-				fwrite(pp, sizeof(*pp), pz, stdout);
-			}
-			fputc('\t', stdout);
-			//fputs(finner_bidstr[b.bid], stdout);
-			if (b.state) {
-				fputc('(', stdout);
-				//fputs(finner_statestr[b.bid](b.state), stdout);
-				fputc(')', stdout);
-			}
-			fputc('\t', stdout);
-			fprintf(stdout, "[%zu,%zu)",
-				x.sta + ctx->abs, x.end + ctx->abs);
-			fputc('\n', stdout);
-#endif
-		} else if (b.print) {
-			fwrite(tp, sizeof(*tp), tz, stdout);
-			fputc('\t', stdout);
-			fputs(b.print(b.state), stdout);
-			fputc('\t', stdout);
-			fprintf(stdout, "[%zu,%zu)",
-				x.sta + ctx->abs, x.end + ctx->abs);
-			fputc('\n', stdout);
+		} else if (UNLIKELY(b.state < 0)) {
+			/* who put that here? */
+			continue;
 		}
+		/* reproduce the extent */
+		fwrite(tp, sizeof(*tp), tz, stdout);
+		fputc('\t', stdout);
+		fputs(B(b), stdout);
+		fputc('\t', stdout);
+		fprintf(stdout, "[%zu,%zu)",
+			x.sta + ctx->abs, x.end + ctx->abs);
+		fputc('\n', stdout);
 	}
 	return;
 }
@@ -316,14 +281,14 @@ co_tanno(const struct ctx_s *UNUSED(ctx), const struct co_terms_retval_s *ta)
 
 	for (size_t i = 0U; i < ta->nannos; i++) {
 		const extent_t x = ta->annos[i].x;
-		const fn_bnu_t b = ta->annos[i].b;
+		const fn_bid_t b = ta->annos[i].b;
 		const size_t this = x.sta;
 
 		if (UNLIKELY(x.sta >= bbox.end)) {
 			/* stuff beyond the bounding box needs to be fed
 			 * into the buffer again in the next iteration */
 			break;
-		} else if (b.print && this >= last) {
+		} else if (b.state >= 0 && this >= last) {
 			/* print from last streak to here */
 			const size_t llen = this - last;
 			const size_t tlen = x.end - this;
@@ -334,7 +299,7 @@ co_tanno(const struct ctx_s *UNUSED(ctx), const struct co_terms_retval_s *ta)
 			fwrite(ta->base + this, sizeof(char), tlen, stdout);
 			colourp && fputs("\x1b[0;2m", stdout);
 			fputc('/', stdout);
-			fputs(b.print(b.state), stdout);
+			fputs(B(b), stdout);
 			colourp && fputs("\x1b[0m", stdout);
 
 			last = x.end;

@@ -4,7 +4,7 @@
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
- * This file is part of numchk.
+ * This file is part of finner.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -40,21 +40,15 @@
 #include "finner.h"
 #include "nifty.h"
 
-static const char*
-cusip(fn_state_t UNUSED(st))
-{
-	return "CUSIP";
-}
-
 
-fn_bnu_t
+fn_bid_t
 fn_cusip(const char *str, size_t len)
 {
 	uint_fast32_t sum = 0U;
 
 	/* common cases first */
 	if (len < 9U) {
-		return (fn_bnu_t){NULL};
+		return (fn_bid_t){-1};
 	}
 
 	/* use the left 8 digits */
@@ -78,7 +72,7 @@ fn_cusip(const char *str, size_t len)
 			d = 38;
 			break;
 		default:
-			return (fn_bnu_t){NULL};
+			return (fn_bid_t){-1};
 		}
 
 		/* double every other */
@@ -88,16 +82,16 @@ fn_cusip(const char *str, size_t len)
 	with (uint_fast32_t d = (unsigned char)(str[8U] ^ '0')) {
 		if (d >= 10U) {
 			/* last one must be a digit */
-			return (fn_bnu_t){NULL};
+			return (fn_bid_t){-1};
 		}
 		sum += d;
 	}
 	/* have a look at the check equation */
 	if ((sum %= 10)) {
 		/* check digit don't match */
-		return (fn_bnu_t){NULL};
+		return (fn_bid_t){-1};
 	}
-	return (fn_bnu_t){cusip};
+	return S("CUSIP");
 }
 
 /* cusip.c ends here */

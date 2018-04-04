@@ -4,7 +4,7 @@
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
- * This file is part of numchk.
+ * This file is part of finner.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -41,14 +41,8 @@
 #include "finner.h"
 #include "nifty.h"
 
-static const char*
-sedol(fn_state_t UNUSED(st))
-{
-	return "SEDOL";
-}
-
 
-fn_bnu_t
+fn_bid_t
 fn_sedol(const char *str, size_t len)
 {
 	static const uint_fast32_t w[] = {1U, 3U, 1U, 7U, 3U, 9U};
@@ -56,7 +50,7 @@ fn_sedol(const char *str, size_t len)
 
 	/* common cases first */
 	if (len < 7U) {
-		return (fn_bnu_t){NULL};
+		return (fn_bid_t){-1};
 	}
 
 	/* use the left 6 chars */
@@ -91,7 +85,7 @@ fn_sedol(const char *str, size_t len)
 			d = 10U + (str[i] - 'A');
 			break;
 		default:
-			return (fn_bnu_t){NULL};
+			return (fn_bid_t){-1};
 		}
 
 		sum += w[i] * d;
@@ -99,16 +93,16 @@ fn_sedol(const char *str, size_t len)
 	with (uint_fast32_t d = (unsigned char)(str[6U] ^ '0')) {
 		if (d >= 10U) {
 			/* last one must be a digit */
-			return (fn_bnu_t){NULL};
+			return (fn_bid_t){-1};
 		}
 		sum += d;
 	}
 	/* have a look at the check equation */
 	if ((sum %= 10)) {
 		/* check digit don't match */
-		return (fn_bnu_t){NULL};
+		return (fn_bid_t){-1};
 	}
-	return (fn_bnu_t){sedol};
+	return S("SEDOL");
 }
 
 /* sedol.c ends here */
