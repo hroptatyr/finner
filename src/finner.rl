@@ -25,6 +25,7 @@
 	sep = "\f" | "\n" | "\r\n" | "\t" | "\v" | " ";
 
 	include finner "ccy.rl";
+	include finner "ccysym.rl";
 	include finner "unit-1.rl";
 
 	int = ("+" | "-")? /[1-9]/ digit* ;
@@ -38,6 +39,7 @@
 
 	finner =
 		ccy @{r("ccy")} |
+		ccysym |
 		upper{2} upnum{9} digit @{c(isin)} |
 		"BBG" (consonant | digit){8} digit @{c(figi)} |
 		upnum{6} @{c(wkn)} |

@@ -41,7 +41,7 @@ libfinner_a_SOURCES += ccy.rl
 #libfinner_a_SOURCES += datex.c
 #BUILT_SOURCES += months-cc.c
 #libfinner_a_SOURCES += timex.c
-#libfinner_a_SOURCES += ccysym.c
+libfinner_a_SOURCES += ccysym.rl
 
 bin_PROGRAMS += finner
 finner_SOURCES = finner.c finner.yuck
@@ -80,7 +80,7 @@ SUFFIXES += .rlc
 	$(AM_V_GEN) PATH=$(top_builddir)/build-aux:"$${PATH}" \
 		ragel -F1 -C -o $@ $<
 
-finner.rlc: unit-1.rl ccy.rl
+finner.rlc: unit-1.rl ccy.rl ccysym.rl
 
 ## Create preprocessor output (debugging purposes only)
 .c.i:
