@@ -20,7 +20,6 @@
 
 	upnum = digit | upper;
 	lonum = digit | lower;
-	check = "_" | "?";
 	vowel = "A" | "E" | "I" | "O" | "U";
 	consonant = upper - vowel;
 	sep = "\f" | "\n" | "\r\n" | "\t" | "\v" | " ";
@@ -39,15 +38,15 @@
 
 	finner =
 		ccy @{c(ccy)} |
-		upper{2} upnum{9} (digit | check) @{c(isin)} |
-		"BBG" (consonant | digit){8} (digit | check) @{c(figi)} |
+		"BBG" (consonant | digit){8} digit @{c(figi)} |
+		upper{2} upnum{9} digit @{c(isin)} |
 		upnum{6} @{c(wkn)} |
 		num @{c(num)} |
 		unit_1 @{m(unit_1)} |
 		amt @{c(amt)} |
-		(alnum | "*" | "@" | "#"){8} (digit | check) @{p(cusip)} |
-		(consonant | digit){6} (digit | check) @{p(sedol)} |
-		upnum{18} (digit{2} | check{2}) @{p(lei)} |
+		(alnum | "*" | "@" | "#"){8} digit @{p(cusip)} |
+		(consonant | digit){6} digit @{p(sedol)} |
+		upnum{18} digit{2} @{p(lei)} |
 		empty ;
 
 	main := (any* @{q = p + 1U;}) :> ( finner ) ;
