@@ -54,7 +54,7 @@ fn_wkn(const char *str, size_t len)
 {
 	size_t ndigits = 0U;
 
-	if (len < 6U) {
+	if (len < 6U || isalnum(str[len]) || iseob(str[len])) {
 	nope:
 		return (fn_bnu_t){NULL};
 	}

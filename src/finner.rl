@@ -40,7 +40,7 @@
 	finner =
 		ccy @{c(ccy)} |
 		upper{2} upnum{9} (digit | check) @{c(isin)} |
-		"BBG" (consonant | digit){8} (digit | check) @{p(figi)} |
+		"BBG" (consonant | digit){8} (digit | check) @{c(figi)} |
 		upnum{6} @{c(wkn)} |
 		num @{c(num)} |
 		unit_1 @{m(unit_1)} |

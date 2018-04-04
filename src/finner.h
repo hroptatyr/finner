@@ -117,6 +117,7 @@ extern fn_bnu_t fn_wkn(const char*, size_t);
 extern fn_bnu_t fn_num(const char*, size_t);
 extern fn_bnu_t fn_ccy(const char*, size_t);
 extern fn_bnu_t fn_isin(const char*, size_t);
+extern fn_bnu_t fn_figi(const char*, size_t);
 extern fn_bnu_t fn_amt(const char*, size_t);
 extern const char *fn_unit_1(fn_state_t);
 
