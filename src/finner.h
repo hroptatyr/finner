@@ -122,6 +122,7 @@ extern fn_bnu_t fn_amt(const char*, size_t);
 extern const char *fn_unit_1(fn_state_t);
 extern fn_bnu_t fn_cusip(const char*, size_t);
 extern fn_bnu_t fn_sedol(const char*, size_t);
+extern fn_bnu_t fn_lei(const char*, size_t);
 
 
 /* convenience */

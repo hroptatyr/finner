@@ -46,7 +46,7 @@
 		amt @{c(amt)} |
 		(alnum | "*" | "@" | "#"){8} digit @{c(cusip)} |
 		(consonant | digit){6} digit @{c(sedol)} |
-		upnum{18} digit{2} @{p(lei)} |
+		upnum{18} digit{2} @{c(lei)} |
 		empty ;
 
 	main := (any* @{q = p + 1U;}) :> ( finner ) ;
