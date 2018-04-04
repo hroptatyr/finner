@@ -38,6 +38,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+#include <ctype.h>
 #include "nifty.h"
 #include "finner.h"
 
@@ -45,7 +46,7 @@
 fn_bid_t
 fn_num(const char *str, size_t len)
 {
-	if ((unsigned char)(str[len] ^ '0') < 10U) {
+	if (isalnum(str[-1]) || isalnum(str[len]) || iseob(str[len])) {
 		/* there's more */
 		return (fn_bid_t){-1};
 	}

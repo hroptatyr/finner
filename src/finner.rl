@@ -27,7 +27,7 @@
 	include finner "ccy.rl";
 	include finner "unit-1.rl";
 
-	int = ("+" | "-")? /[1-9]/ digit* | "0" ;
+	int = ("+" | "-")? /[1-9]/ digit* ;
 
 	float = ("+" | "-")? "0" ("." | ",") digit+
 		| ("+" | "-")? /[1-9]/ digit* ("." | ",") digit+ ;
