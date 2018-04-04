@@ -71,15 +71,17 @@ version.c: version.c.in $(top_builddir)/.version
 ## yuck rule
 SUFFIXES += .yuck
 SUFFIXES += .yucc
-SUFFIXES += .rl
-SUFFIXES += .rlc
 .yuck.yucc:
 	$(AM_V_GEN) PATH=$(top_builddir)/build-aux:"$${PATH}" \
 		yuck$(EXEEXT) gen -o $@ $<
 
+SUFFIXES += .rl
+SUFFIXES += .rlc
 .rl.rlc:
 	$(AM_V_GEN) PATH=$(top_builddir)/build-aux:"$${PATH}" \
 		ragel -F1 -C -o $@ $<
+
+finner.rlc: unit-1.rl ccy.rl
 
 ## Create preprocessor output (debugging purposes only)
 .c.i:

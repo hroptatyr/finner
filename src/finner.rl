@@ -1,3 +1,4 @@
+/* -*- c -*- */
 #include <string.h>
 #include <stdio.h>
 #include "finner.h"
@@ -7,7 +8,12 @@
 # pragma warning (disable:2415)
 #endif  /* __INTEL_COMPILER */
 
-#define p(x)	//fwrite(q, 1, p + 1U - q, stdout), puts(#x);
+#define p(x)	
+#define q(x)	\
+	fwrite(q, 1, p + 1U - q, stderr); \
+	fputc('\t', stderr); \
+	fputs(#x, stderr); \
+	fputc('\n', stderr);
 
 %%{
 	machine finner;
@@ -27,7 +33,7 @@
 	float = ("+" | "-")? "0" ("." | ",") digit+
 		| ("+" | "-")? /[1-9]/ digit* ("." | ",") digit+ ;
 
-	num = int unit_1? | float unit_1? ;
+	num = int | float ;
 
 	amt = ccy " "? (num @{c(num)}) | num " "? ccy ;
 
@@ -37,6 +43,7 @@
 		"BBG" (consonant | digit){8} (digit | check) @{p(figi)} |
 		upnum{6} @{c(wkn)} |
 		num @{c(num)} |
+		unit_1 @{m(unit_1)} |
 		amt @{c(amt)} |
 		(alnum | "*" | "@" | "#"){8} (digit | check) @{p(cusip)} |
 		(consonant | digit){6} (digit | check) @{p(sedol)} |
@@ -53,23 +60,28 @@ terms1(const char **pp, const char *const s, const char *const pe)
 {
 	const char *p = *pp;
 	const char *q = p;
+	fn_state_t S = 0;
 	annu_t r = {};
 	int cs;
 
-#if 1
-	fputs("TERMS1(", stdout);
-	fwrite(p, 1, pe - p, stdout);
-	fputs(")\n", stdout);
+#if 0
+	fputs("TERMS1(", stderr);
+	fwrite(p, 1, pe - p, stderr);
+	fputs(")\n", stderr);
 #endif
 
+#define state(x)	(S = (intptr_t)(x));
 #define c(x)	\
 	with (fn_bnu_t y = fn_##x(q, p + 1U - q)) { \
 		if (!y.print) { \
 			break; \
 		} \
-		fwrite(q, 1, p + 1U - q, stdout); \
-		fputc('\t', stdout); \
-		puts(#x); \
+		p(x); \
+		r = (annu_t){{q - s, p + 1U - s}, y}; \
+	}
+#define m(x)	\
+	with (fn_bnu_t y = {fn_##x, S}) { \
+		p(x); \
 		r = (annu_t){{q - s, p + 1U - s}, y}; \
 	}
 	%% write init;

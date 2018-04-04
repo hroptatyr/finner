@@ -94,7 +94,7 @@ ROUNDTO(size_t x, size_t n)
 	return (x + (n - 1U)) & ~(size_t)(n - 1U);
 }
 
-static inline size_t
+static inline __attribute__((unused)) size_t
 ROUNDLEASTTO(size_t x, size_t least, size_t n)
 {
 /* round X (but at least LEAST) to N */

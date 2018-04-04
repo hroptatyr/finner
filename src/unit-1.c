@@ -41,115 +41,12 @@
 #include "finner.h"
 #include "nifty.h"
 
-typedef enum {
-	UNK,
-	HUNDRED,
-	THOUSAND,
-	MILLION,
-	BILLION,
-	TRILLION,
-	PERCENT,
-	BPOINT,
-} unit_1_t;
-
-static const char*
-unit_1(fn_state_t st)
-{
-	switch (st) {
-	case BILLION:
-		return "*1000000000";
-	case MILLION:
-		return "*1000000";
-	case THOUSAND:
-		return "*1000";
-	case TRILLION:
-		return "*1000000000000";
-	case PERCENT:
-		return "*0.01";
-	case BPOINT:
-		return "*0.0001";
-	case HUNDRED:
-		return "*100";
-	default:
-		break;
-	}
-	return "1";
-}
-
 
-fn_bnu_t
-fn_unit_1(const char *str, size_t len)
+const char*
+fn_unit_1(fn_state_t st)
 {
-	const char *sp = str;
-	const char *const ep = str + len;
-	unit_1_t guess = UNK;
-
-	switch (*sp) {
-	case '%':
-		guess = PERCENT;
-		sp++;
-		break;
-	case 'p':
-		if (++sp >= ep) {
-			/* don't worry */
-			break;
-		} else if (sp + 6U > ep || memcmp(sp, "ercent", 6U)) {
-			/* not percent */
-			break;
-		}
-		/* otherwise use him */
-		sp += 6U;
-		guess = PERCENT;
-		break;
-
-	case 'b':
-		if (++sp >= ep) {
-			/* it's any bullshit */
-			break;
-		}
-		switch (*sp) {
-		case 'p':
-			guess = BPOINT;
-			break;
-		case 'n':
-			guess = BILLION;
-			break;
-		default:
-			guess = BILLION;
-			goto illion;
-		}
-		if (++sp < ep && (*sp != '.' || ++sp < ep)) {
-			/* only accept bn. and bp. */
-			guess = UNK;
-		}
-		break;
-	case 'm':
-		guess = MILLION;
-		if (++sp >= ep) {
-			/* it's 11m or so */
-			break;
-		}
-		goto illion;
-	case 't':
-		if (++sp >= ep || *sp++ != 'r') {
-			/* it's nothing */
-			break;
-		}
-		guess = TRILLION;
-		goto illion;
-
-	illion:
-		if (sp + 6U != ep || memcmp(sp, "illion", 6U)) {
-			/* nope, not an illion of any kind */
-			guess = UNK;
-		}
-		sp += 6U;
-		break;
-	}
-	if (guess == UNK) {
-		return (fn_bnu_t){};
-	}
-	return (fn_bnu_t){unit_1, guess};
+	/* here we trust that ST has been set by an action in unit-1.rl */
+	return (void*)st ?: "1";
 }
 
 /* unit-1.c ends here */
