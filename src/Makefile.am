@@ -39,8 +39,6 @@ libfinner_a_SOURCES += wkn.c
 libfinner_a_SOURCES += ccy.rl
 libfinner_a_SOURCES += date.c
 libfinner_a_SOURCES += time.c
-#libfinner_a_SOURCES += datex.c
-#BUILT_SOURCES += months-cc.c
 libfinner_a_SOURCES += ccysym.rl
 
 bin_PROGRAMS += finner
@@ -55,11 +53,6 @@ BUILT_SOURCES += finner.rlc
 SUFFIXES += .ccl
 .ccl.c:
 	$(AM_V_GEN) $(top_builddir)/build-aux/cccc < $< > $@ || $(RM) -- $@
-
-## phl->c
-SUFFIXES += .phl
-.phl.c:
-	$(AM_V_GEN) $(top_builddir)/build-aux/phash < $< > $@ || $(RM) -- $@
 
 ## version rules
 version.c: version.c.in $(top_builddir)/.version
