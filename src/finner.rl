@@ -40,6 +40,7 @@
 	finner =
 		ccy @{r("ccy")} |
 		ccysym |
+		ccy ("." | ":" | "/")? ccy @{c(fxpair)} |
 		upper{2} upnum{9} digit @{c(isin)} |
 		"BBG" (consonant | digit){8} digit @{c(figi)} |
 		upnum{6} @{c(wkn)} |

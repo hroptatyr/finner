@@ -69,6 +69,7 @@ extern fn_bid_t fn_figi(const char*, size_t);
 extern fn_bid_t fn_cusip(const char*, size_t);
 extern fn_bid_t fn_sedol(const char*, size_t);
 extern fn_bid_t fn_lei(const char*, size_t);
+extern fn_bid_t fn_fxpair(const char*, size_t);
 
 
 /* convenience */
