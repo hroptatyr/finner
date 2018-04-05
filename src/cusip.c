@@ -91,7 +91,7 @@ fn_cusip(const char *str, size_t len)
 		/* check digit don't match */
 		return (fn_bid_t){-1};
 	}
-	return S("CUSIP");
+	return S("cusip");
 }
 
 /* cusip.c ends here */

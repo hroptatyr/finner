@@ -105,7 +105,7 @@ fn_figi(const char *str, size_t len)
 		/* check digit don't match */
 		return (fn_bid_t){-1};
 	}
-	return S("FIGI");
+	return S("figi");
 }
 
 /* figi.c ends here */

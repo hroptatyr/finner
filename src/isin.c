@@ -100,7 +100,7 @@ fn_isin(const char *str, size_t len)
 		/* check digit don't match */
 		return (fn_bid_t){-1};
 	}
-	return S("ISIN");
+	return S("isin");
 }
 
 /* isin.c ends here */

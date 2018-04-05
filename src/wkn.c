@@ -75,7 +75,7 @@ fn_wkn(const char *str, size_t len)
 	}
 
 	/* bid bid bid */
-	return S("WKN");
+	return S("wkn");
 }
 
 /* wkn.c ends here */

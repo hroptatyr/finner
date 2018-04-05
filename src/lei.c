@@ -103,7 +103,7 @@ fn_lei(const char *str, size_t len)
 		return (fn_bid_t){-1};
 	}
 	/* otherwise all's doog */
-	return S("LEI");
+	return S("lei");
 }
 
 /* lei.c ends here */
