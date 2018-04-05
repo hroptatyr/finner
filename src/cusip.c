@@ -40,6 +40,14 @@
 #include "finner.h"
 #include "nifty.h"
 
+#ifdef RAGEL_BLOCK
+%%{
+	machine finner;
+
+	cusip = (alnum | "*" | "@" | "#"){8} digit @{c(cusip)} ;
+}%%
+#endif	/* RAGEL_BLOCK */
+
 
 fn_bid_t
 fn_cusip(const char *str, size_t len)

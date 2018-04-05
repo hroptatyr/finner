@@ -45,6 +45,16 @@
 #define DIGIT(x)	((unsigned char)((x) ^ '0'))
 #define DIGITP(x)	(DIGIT(x) < 10U)
 
+#ifdef RAGEL_BLOCK
+%%{
+	machine finner;
+
+	date =
+		digit{4} ("/" | "-")? digit{2} ("/" | "-")? digit{2} @{c(date_y1)} |
+		digit{2} ("." | "/")? digit{2} ("." | "/")? digit{4} @{c(date_yl)} ;
+}%%
+#endif	/* RAGEL_BLOCK */
+
 static bool
 check_y(const char s[static 4U])
 {

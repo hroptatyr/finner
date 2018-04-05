@@ -45,6 +45,14 @@
 /* allowed isin country codes */
 #include "isin-cc.c"
 
+#ifdef RAGEL_BLOCK
+%%{
+	machine finner;
+
+	isin = upper{2} upnum{9} digit @{c(isin)} ;
+}%%
+#endif	/* RAGEL_BLOCK */
+
 
 fn_bid_t
 fn_isin(const char *str, size_t len)

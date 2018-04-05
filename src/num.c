@@ -42,6 +42,19 @@
 #include "nifty.h"
 #include "finner.h"
 
+#ifdef RAGEL_BLOCK
+%%{
+	machine finner;
+
+	int = ("+" | "-")? /[1-9]/ digit* ;
+
+	float = ("+" | "-")? "0" ("." | ",") digit+
+		| ("+" | "-")? /[1-9]/ digit* ("." | ",") digit+ ;
+
+	num = (int | float) @{c(num)} ;
+}%%
+#endif	/* RAGEL_BLOCK */
+
 
 fn_bid_t
 fn_num(const char *str, size_t len)

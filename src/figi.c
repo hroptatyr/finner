@@ -41,6 +41,14 @@
 #include "finner.h"
 #include "nifty.h"
 
+#ifdef RAGEL_BLOCK
+%%{
+	machine finner;
+
+	figi = "BBG" (consonant | digit){8} digit @{c(figi)} ;
+}%%
+#endif	/* RAGEL_BLOCK */
+
 
 fn_bid_t
 fn_figi(const char *str, size_t len)

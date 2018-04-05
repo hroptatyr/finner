@@ -27,34 +27,31 @@
 	include finner "ccy.rl";
 	include finner "ccysym.rl";
 	include finner "unit-1.rl";
+	include finner "num.c";
+	include finner "date.c";
+	include finner "figi.c";
+	include finner "isin.c";
+	include finner "sedol.c";
+	include finner "cusip.c";
+	include finner "wkn.c";
+	include finner "lei.c";
 
-	int = ("+" | "-")? /[1-9]/ digit* ;
-
-	float = ("+" | "-")? "0" ("." | ",") digit+
-		| ("+" | "-")? /[1-9]/ digit* ("." | ",") digit+ ;
-
-	num = int | float ;
-
-	amt = ccy " "? (num @{c(num)}) | num " "? ccy ;
-
-	date =
-		digit{4} ("/" | "-")? digit{2} ("/" | "-")? digit{2} @{c(date_y1)} |
-		digit{2} ("." | "/")? digit{2} ("." | "/")? digit{4} @{c(date_yl)} ;
+	amt = ccy " "? num | num " "? ccy ;
 
 	finner =
-		num @{c(num)} |
+		num |
 		date |
 		ccy @{r("ccy")} |
 		ccysym |
 		ccy ("." | ":" | "/")? ccy @{c(fxpair)} |
-		upper{2} upnum{9} digit @{c(isin)} |
-		"BBG" (consonant | digit){8} digit @{c(figi)} |
-		upnum{6} @{c(wkn)} |
+		isin |
+		figi |
+		wkn |
 		unit_1 |
 		amt @{r("amt")} |
-		(alnum | "*" | "@" | "#"){8} digit @{c(cusip)} |
-		(consonant | digit){6} digit @{c(sedol)} |
-		upnum{18} digit{2} @{c(lei)} |
+		cusip |
+		sedol |
+		lei |
 		empty ;
 
 	main := (any* @{q = p + 1U;}) :> ( finner ) ;

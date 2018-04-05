@@ -41,6 +41,14 @@
 #include "finner.h"
 #include "nifty.h"
 
+#ifdef RAGEL_BLOCK
+%%{
+	machine finner;
+
+	sedol = (consonant | digit){6} digit @{c(sedol)} ;
+}%%
+#endif	/* RAGEL_BLOCK */
+
 
 fn_bid_t
 fn_sedol(const char *str, size_t len)

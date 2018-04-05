@@ -42,6 +42,14 @@
 #include "finner.h"
 #include "nifty.h"
 
+#ifdef RAGEL_BLOCK
+%%{
+	machine finner;
+
+	wkn = upnum{6} @{c(wkn)} ;
+}%%
+#endif	/* RAGEL_BLOCK */
+
 
 fn_bid_t
 fn_wkn(const char *str, size_t len)

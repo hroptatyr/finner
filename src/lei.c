@@ -42,6 +42,14 @@
 #include "finner.h"
 #include "nifty.h"
 
+#ifdef RAGEL_BLOCK
+%%{
+	machine finner;
+
+	lei = upnum{18} digit{2} @{c(lei)} ;
+}%%
+#endif	/* RAGEL_BLOCK */
+
 
 fn_bid_t
 fn_lei(const char *str, size_t len)
