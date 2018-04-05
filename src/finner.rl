@@ -29,6 +29,7 @@
 	include finner "unit-1.rl";
 	include finner "num.c";
 	include finner "date.c";
+	include finner "time.c";
 	include finner "figi.c";
 	include finner "isin.c";
 	include finner "sedol.c";
@@ -41,6 +42,7 @@
 	finner =
 		num |
 		date |
+		time |
 		ccy @{r("ccy")} |
 		ccysym |
 		ccy ("." | ":" | "/")? ccy @{c(fxpair)} |
