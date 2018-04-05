@@ -42,7 +42,8 @@
 #include "finner.h"
 #include "nifty.h"
 
-#define DIGITP(x)	(((unsigned char)((x) ^ '0')) < 10U)
+#define DIGIT(x)	((unsigned char)((x) ^ '0'))
+#define DIGITP(x)	(DIGIT(x) < 10U)
 
 static bool
 check_y(const char s[static 4U])
@@ -64,9 +65,9 @@ check_m(const char s[static 4U])
 {
 	switch (s[0U]) {
 	case '0':
-		return (unsigned int)(s[1U] ^ '0') > 0U;
+		return DIGIT(s[1U]) > 0U;
 	case '1':
-		return (unsigned int)(s[1U] ^ '0') <= 2U;
+		return DIGIT(s[1U]) <= 2U;
 	default:
 		break;
 	}
@@ -78,104 +79,63 @@ check_d(const char s[static 4U])
 {
 	switch (s[0U]) {
 	case '0':
-		return (unsigned int)(s[1U] ^ '0') > 0U;
+		return DIGIT(s[1U]) > 0U;
 	case '1':
 	case '2':
 		return true;
 	case '3':
-		return (unsigned int)(s[1U] ^ '0') <= 1U;
+		return DIGIT(s[1U]) <= 1U;
 	}
 	return false;
 }
 
 
-/* class implementation */
 fn_bid_t
-fn_date_bid(const char *str, size_t len)
+fn_date_y1(const char *str, size_t len)
 {
-	char sep = '\0';
-
-	/* at least 2 digits we want */
-	if (!(len == 8U || len == 10U)) {
-		return fn_nul_bid;
-	} else if (!DIGITP(str[0U]) || !DIGITP(str[1U])) {
-		return fn_nul_bid;
-	}
-	if (DIGITP(str[2U])) {
-		/* could be YYYY-MM-DD */
-		if (!DIGITP(str[3U])) {
-			return fn_nul_bid;
-		}
-		if (DIGITP(str[4U])) {
-			/* must be YYYYMMDD */
-			if (!DIGITP(str[5U]) ||
-			    !DIGITP(str[6U]) ||
-			    !DIGITP(str[7U])) {
-				/* apparently not */
-				return fn_nul_bid;
-			} else if (len != 8U) {
-				return fn_nul_bid;
-			} else if (!check_y(str + 0U)) {
-				return fn_nul_bid;
-			} else if (!check_m(str + 4U)) {
-				return fn_nul_bid;
-			} else if (!check_d(str + 6U)) {
-				return fn_nul_bid;
-			}
-		} else {
-			switch (str[4U]) {
-			case '/':
-			case '-':
-				if (len == 10U) {
-					sep = str[4U];
-					break;
-				}
-			default:
-				return fn_nul_bid;
-			}
-			if (!DIGITP(str[5U]) || !DIGITP(str[6U])) {
-				return fn_nul_bid;
-			} else if (str[7U] != sep) {
-				return fn_nul_bid;
-			} else if (!DIGITP(str[8U]) || !DIGITP(str[9U])) {
-				return fn_nul_bid;
-			} else if (!check_y(str + 0U)) {
-				return fn_nul_bid;
-			} else if (!check_m(str + 5U)) {
-				return fn_nul_bid;
-			} else if (!check_d(str + 8U)) {
-				return fn_nul_bid;
-			}
-		}
-	} else {
-		switch (str[2U]) {
-		case '.':
-		case '/':
-			if (len == 10U) {
-				sep = str[2U];
-				break;
-			}
-		default:
-			return fn_nul_bid;
-		}
-		if (!DIGITP(str[3U]) || !DIGITP(str[4U])) {
-			return fn_nul_bid;
-		} else if (str[5U] != sep) {
-			return fn_nul_bid;
-		} else if (!DIGITP(str[6U]) || !DIGITP(str[7U]) ||
-			   !DIGITP(str[8U]) || !DIGITP(str[9U])) {
-			return fn_nul_bid;
-		} else if (!check_y(str + 6U)) {
-			return fn_nul_bid;
-		} else if (!check_m(str + 0U) && !check_d(str + 3U)) {
-			return fn_nul_bid;
-		} else if (!check_d(str + 0U) || !check_d(str + 3U)) {
-			return fn_nul_bid;
-		}
+/* check if str is a date with the year upfront */
+	if (len < 8U) {
+		return (fn_bid_t){-1};
+	} else if (!DIGITP(str[4U]) && str[4U] != str[7U]) {
+		/* separators don't match*/
+		return (fn_bid_t){-1};
+	} else if (!check_y(str + 0U)) {
+		/* year's fucked */
+		return (fn_bid_t){-1};
+	} else if (!check_m(str + 4U + !DIGITP(str[4U]))) {
+		/* Month is cunted, in that order */
+		return (fn_bid_t){-1};
+	} else if (!check_d(str + 6U + (!DIGITP(str[4U]) << 1U))) {
+		/* Day is fucked, in that order */
+		return (fn_bid_t){-1};
 	}
 
-	/* bid just any number really */
-	return (fn_bid_t){FINNER_DATE};
+	/* we survived the else-if tornado */
+	return S("date");
+}
+
+fn_bid_t
+fn_date_yl(const char *str, size_t len)
+{
+/* check if str is a date with the year last */
+	if (len < 8U) {
+		return (fn_bid_t){-1};
+	} else if (!DIGITP(str[2U]) && str[2U] != str[5U]) {
+		/* separators don't match */
+		return (fn_bid_t){-1};
+	} else if (!check_y(str + 4U + (!DIGITP(str[2U]) << 1U))) {
+		/* year's fucked */
+		return (fn_bid_t){-1};
+	} else if (!check_m(str + 2U + !DIGITP(str[2U])) && !check_d(str + 0U)) {
+		/* Day Month is fucked, in that order */
+		return (fn_bid_t){-1};
+	} else if (!check_m(str + 0U) && !check_d(str + 2U + !DIGITP(str[2U]))) {
+		/* Month Day is cunted, in that order */
+		return (fn_bid_t){-1};
+	}
+
+	/* we survived the else-if tornado */
+	return S("date");
 }
 
 /* date.c ends here */

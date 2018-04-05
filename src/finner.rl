@@ -37,8 +37,13 @@
 
 	amt = ccy " "? (num @{c(num)}) | num " "? ccy ;
 
+	date =
+		digit{4} ("/" | "-")? digit{2} ("/" | "-")? digit{2} @{c(date_y1)} |
+		digit{2} ("." | "/")? digit{2} ("." | "/")? digit{4} @{c(date_yl)} ;
+
 	finner =
 		num @{c(num)} |
+		date |
 		ccy @{r("ccy")} |
 		ccysym |
 		ccy ("." | ":" | "/")? ccy @{c(fxpair)} |
