@@ -1,6 +1,6 @@
-/*** unit-1.c -- unitless factors
+/*** unit-1.c -- checker for unitless "units", i.e. factors
  *
- * Copyright (C) 2014-2017 Sebastian Freundt
+ * Copyright (C) 2014-2018 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
@@ -38,119 +38,27 @@
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+#include "finner.h"
 #include "nifty.h"
-#include "unit-1.h"
 
-typedef enum {
-	UNK,
-	HUNDRED,
-	THOUSAND,
-	MILLION,
-	BILLION,
-	TRILLION,
-	PERCENT,
-	BPOINT,
-} unit_1_t;
+#ifdef RAGEL_BLOCK
+%%{
+	machine finner;
 
-
-/* class implementation */
-fn_bid_t
-fn_unit_1_bid(const char *str, size_t len)
-{
-	const char *sp = str;
-	const char *const ep = str + len;
-	unit_1_t guess = UNK;
-
-	switch (*sp) {
-	case '%':
-		guess = PERCENT;
-		sp++;
-		break;
-	case 'p':
-		if (++sp >= ep) {
-			/* don't worry */
-			break;
-		} else if (sp + 6U > ep || memcmp(sp, "ercent", 6U)) {
-			/* not percent */
-			break;
-		}
-		/* otherwise use him */
-		sp += 6U;
-		guess = PERCENT;
-		break;
-
-	case 'b':
-		if (++sp >= ep) {
-			/* it's any bullshit */
-			break;
-		}
-		switch (*sp) {
-		case 'p':
-			guess = BPOINT;
-			break;
-		case 'n':
-			guess = BILLION;
-			break;
-		default:
-			guess = BILLION;
-			goto illion;
-		}
-		if (++sp < ep && (*sp != '.' || ++sp < ep)) {
-			/* only accept bn. and bp. */
-			guess = UNK;
-		}
-		break;
-	case 'm':
-		guess = MILLION;
-		if (++sp >= ep) {
-			/* it's 11m or so */
-			break;
-		}
-		goto illion;
-	case 't':
-		if (++sp >= ep || *sp++ != 'r') {
-			/* it's nothing */
-			break;
-		}
-		guess = TRILLION;
-		goto illion;
-
-	illion:
-		if (sp + 6U != ep || memcmp(sp, "illion", 6U)) {
-			/* nope, not an illion of any kind */
-			guess = UNK;
-		}
-		sp += 6U;
-		break;
-	}
-	if (guess == UNK) {
-		return fn_nul_bid;
-	}
-	return (fn_bid_t){FINNER_UNIT_1, ep - sp, guess};
-}
-
-const char*
-fn_unit_1_prs(uintptr_t state)
-{
-	switch (state) {
-	case BILLION:
-		return "*1000000000";
-	case MILLION:
-		return "*1000000";
-	case THOUSAND:
-		return "*1000";
-	case TRILLION:
-		return "*1000000000000";
-	case PERCENT:
-		return "*0.01";
-	case BPOINT:
-		return "*0.0001";
-	case HUNDRED:
-		return "*100";
-	default:
-		break;
-	}
-	return "1";
-}
+	unit_1 = 
+		(num " ")? "million" @{r("num(*1000000)")} |
+		num ("mm" | "m") @{r("num(*1000000)")} |
+		(num " ")? "billion" @{r("num(*1000000000)")} |
+		num "bn" @{r("num(*1000000000)")} |
+		(num " ")? "trillion" @{r("num(*1000000000000)")} |
+		num "tr" @{r("num(*1000000000000)")} |
+		(num " ")? "percent" @{r("num(*0.01)")} |
+		(num " "?)? "pct" @{r("num(*0.01)")} |
+		num " "? "%" @{r("num(*0.01)")} |
+		(num " ")? "basis points" @{r("num(*0.0001)")} |
+		(num " "?)? "bps" @{r("num(*0.0001)")} |
+		num " "? "bps" @{r("num(*0.0001)")} ;
+}%%
+#endif	/* RAGEL_BLOCK */
 
 /* unit-1.c ends here */

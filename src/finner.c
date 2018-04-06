@@ -1,6 +1,6 @@
 /*** finner.c -- main snippet
  *
- * Copyright (C) 2014-2017 Sebastian Freundt
+ * Copyright (C) 2014-2018 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
@@ -51,8 +51,6 @@
 #include <assert.h>
 #include <stdint.h>
 #include "finner.h"
-#include "bidder.h"
-#include "collector.h"
 #include "nifty.h"
 
 struct co_terms_retval_s;
@@ -96,7 +94,7 @@ ROUNDTO(size_t x, size_t n)
 	return (x + (n - 1U)) & ~(size_t)(n - 1U);
 }
 
-static inline size_t
+static inline __attribute__((unused)) size_t
 ROUNDLEASTTO(size_t x, size_t least, size_t n)
 {
 /* round X (but at least LEAST) to N */
@@ -107,6 +105,8 @@ ROUNDLEASTTO(size_t x, size_t least, size_t n)
 }
 
 
+#include "finner.rlc"
+
 static const struct co_snarf_retval_s {
 	const char *buf;
 	size_t bsz;
@@ -114,7 +114,7 @@ static const struct co_snarf_retval_s {
 {
 	/* upon the first call we expect a completely processed buffer
 	 * just to determine the buffer's size */
-	static char buf[64U * 1024U];
+	static char buf[64U * 1024U + 1U];
 	static struct co_snarf_retval_s ret = {buf};
 	static enum {
 		SNARF_NONE,
@@ -134,15 +134,21 @@ static const struct co_snarf_retval_s {
 	case SNARF_READ:
 		/* now it's NPR less unprocessed bytes */
 		ret.bsz -= npr;
+		/* trim full buffers */
+		ret.bsz &= sizeof(buf) - 1U - 1U;
+
 		/* check if we need to move buffer contents */
 		if (ret.bsz > 0) {
 			memmove(buf, buf + npr, ret.bsz);
 		}
 
-		nrd = read(fd, buf + ret.bsz, sizeof(buf) - ret.bsz);
+		nrd = read(fd, buf + ret.bsz, sizeof(buf) - 1U - ret.bsz);
 		if (nrd > 0) {
 			/* we've got NRD more unprocessed bytes */
 			ret.bsz += nrd;
+
+			/* as a service mark the eob */
+			buf[ret.bsz] = eob;
 
 			/* process */
 			return &ret;
@@ -154,12 +160,13 @@ static const struct co_snarf_retval_s {
 			/* we don't care how much got processed */
 			return &ret;
 		}
-
+		/* add npr again so the next one doesn't underflow */
+		ret.bsz += npr;
 	case SNARF_POST:
 		/* now it's NPR less unprocessed bytes */
 		ret.bsz -= npr;
 		/* check if we need to move buffer contents */
-		if (ret.bsz > 0) {
+		if (ret.bsz) {
 			memmove(buf, buf + npr, ret.bsz);
 			/* process */
 			return &ret;
@@ -178,32 +185,15 @@ static struct co_terms_retval_s {
 			size_t nannos;
 			extent_t bbox;
 		};
-		struct anno_s _algn_;
+		anno_t _algn_;
 	};
-	struct anno_s annos[];
+	anno_t annos[];
 } *co_terms(const struct co_snarf_retval_s *rd)
 {
 	static struct co_terms_retval_s *rv;
 	static size_t rz;
-	/* this is a simple state machine,
-	 * we start at NONE and wait for an ALNUM,
-	 * in state ALNUM we can either go back to NONE (and yield) if
-	 * neither a punct nor an alnum is read, or we go forward to
-	 * PUNCT in state PUNCT we can either go back to NONE (and
-	 * yield) if neither a punct nor an alnum is read, or we go back
-	 * to ALNUM hand over to our friendly termify routine */
-	enum state_e {
-		ST_NONE,
-		ST_SEEN_ALNUM,
-		ST_SEEN_PUNCT,
-	} st = ST_NONE;
-	enum {
-		CLS_UNK,
-		CLS_PUNCT,
-		CLS_TRSEP,
-		CLS_ALNUM,
-	} cl;
 #define TERMS_EXTRA	(sizeof(*rv) / sizeof(*rv->annos))
+
 	_Static_assert(TERMS_EXTRA > 0U, "terms array type is bigger than header");
 
 	if (UNLIKELY(rv == NULL && rd == NULL)) {
@@ -221,325 +211,32 @@ static struct co_terms_retval_s {
 	}
 
 	const char *bp = rd->buf;
-	const char *ap = rd->buf;
-	const char *fp = rd->buf;
-	size_t ia = 0U;
-	for (const char *const ep = rd->buf + rd->bsz; bp < ep; bp++) {
-		if (UNLIKELY(*bp < 0)) {
-			cl = CLS_UNK;
-		} else if (*bp <= ' ') {
-			cl = CLS_TRSEP;
-		} else if (*bp <= '"') {
-			cl = CLS_TRSEP;
-		} else if (*bp <= '%') {
-			cl = CLS_ALNUM;
-		} else if (*bp == '+') {
-			cl = CLS_ALNUM;
-		} else if (*bp < '0') {
-			cl = CLS_PUNCT;
-		} else if (*bp <= '9') {
-			cl = CLS_ALNUM;
-		} else if (*bp <= ':') {
-			cl = CLS_PUNCT;
-		} else if (*bp < '@') {
-			cl = CLS_TRSEP;
-		} else if (*bp <= 'Z') {
-			cl = CLS_ALNUM;
-		} else if (*bp < '^') {
-			cl = CLS_TRSEP;
-		} else if (*bp < 'a') {
-			cl = CLS_PUNCT;
-		} else if (*bp <= 'z') {
-			cl = CLS_ALNUM;
-		} else {
-			cl = CLS_PUNCT;
+	const char *const ep = rd->buf + rd->bsz;
+	rv->nannos = 0U;
+	while (bp < ep) {
+		anno_t a = terms1(&bp, rd->buf, ep);
+		if (a.b.state < 0) {
+			continue;
 		}
+		/* otherwise store extent */
+		if (UNLIKELY(rv->nannos >= rz)) {
+			/* resize */
+			const size_t olz = rz + TERMS_EXTRA;
+			const size_t nuz = ROUNDTO(2U * olz, 4096U);
 
-		switch (st) {
-		case ST_NONE:
-			switch (cl) {
-			case CLS_ALNUM:
-			case CLS_UNK:
-				/* start the machine */
-				st = ST_SEEN_ALNUM;
-			default:
-				ap = bp;
-			}
-			break;
-
-		case ST_SEEN_ALNUM:
-			switch (cl) {
-			case CLS_PUNCT:
-				/* better record the preliminary
-				 * end-of-streak */
-				st = ST_SEEN_PUNCT;
-				fp = bp;
-			default:
-				break;
-			case CLS_TRSEP:
-				fp = bp;
-				goto yield;
-			}
-			break;
-
-		case ST_SEEN_PUNCT:
-			switch (cl) {
-			default:
-				/* aah, good one */
-				st = ST_SEEN_ALNUM;
-			case CLS_PUNCT:
-				/* 2 puncts in a row,
-				 * not on my account */
-				break;
-			case CLS_TRSEP:
-				goto yield;
-			}
-			break;
-
-		yield:
-			if (UNLIKELY(ia >= rz)) {
-				/* resize */
-				const size_t olz = rz + TERMS_EXTRA;
-				const size_t nuz = ROUNDTO(2U * olz, 4096U);
-
-				rv = recalloc(rv, olz, nuz, sizeof(*rv->annos));
-				rz = nuz - TERMS_EXTRA;
-			}
-			rv->annos[ia].x.sta = ap - rd->buf;
-			rv->annos[ia].x.end = fp - rd->buf;
-			ia++;
-
-			st = ST_NONE;
-			ap = bp;
-			fp = NULL;
-			break;
+			rv = recalloc(rv, olz, nuz, sizeof(*rv->annos));
+			rz = nuz - TERMS_EXTRA;
 		}
+		rv->annos[rv->nannos++] = a;
 	}
 
 	/* set up result */
 	rv->base = rd->buf;
-	if (LIKELY((rv->nannos = ia))) {
-		/* calculate proper bounding box */
-		rv->bbox.sta = 0U;
-		rv->bbox.end = ap - rd->buf;
-	} else {
-		/* include everything in the bounding box */
-		rv->bbox.sta = 0U;
-		rv->bbox.end = bp - rd->buf;
-	}
+	/* go back to last separator */
+	for (; bp > rd->buf && (unsigned char)bp[-1] > ' '; bp--);
+	rv->bbox = (extent_t){0U, bp - rd->buf};
 	return rv;
 #undef TERMS_EXTRA
-}
-
-/* bidders or higher level stuff that takes a terms retval
- *
- * We store the bids as they come in, so the resulting BIDS array
- * coincides with the terms retval array TA->ANNOS.
- *
- * Terms for which a bidder returned FINNER_TERM (or FINNER_CUT)
- * with a STATE != 0 are cut in halves at STATE bytes.  The STATE
- * slot is then reused to point to the index of the newly created
- * half-term (behind anything in TA->ANNOS).  The second half is
- * stored in the slot behind it. */
-static struct co_terms_retval_s*
-co_tbids(struct co_terms_retval_s *ta)
-{
-	static struct co_terms_retval_s *rv;
-	static size_t rz;
-	size_t nb = 0U;
-
-#define TBIDS_EXTRA	(sizeof(*rv) / sizeof(*rv->annos))
-	_Static_assert(TBIDS_EXTRA > 0U, "tbids array type is bigger than header");
-
-	if (UNLIKELY(rv == NULL && ta == NULL)) {
-		/* just return */
-		return NULL;
-	} else if (UNLIKELY(ta == NULL)) {
-		free(rv);
-		rv = NULL;
-		rz = 0U;
-		return NULL;
-	} else if (UNLIKELY(ta->nannos > rz)) {
-		/* scale to number of annos */
-		size_t nuz = ROUNDTO(ta->nannos + TBIDS_EXTRA, 4096U);
-
-		rv = recalloc(rv, rz + TBIDS_EXTRA, nuz, sizeof(*rv->annos));
-		rz = nuz - TBIDS_EXTRA;
-	}
-
-	for (size_t i = 0U; i < ta->nannos; i++) {
-		extent_t x = ta->annos[i].x;
-		const char *tp = ta->base + x.sta;
-		size_t tz = x.end - x.sta;
-		fn_bid_t b;
-
-	rebid:
-		/* resize? */
-		if (nb >= rz) {
-			const size_t olz = rz + TBIDS_EXTRA;
-			const size_t nuz = ROUNDTO(2U * olz, 4096U);
-
-			rv = recalloc(rv, olz, nuz, sizeof(*rv->annos));
-			rz = nuz - TBIDS_EXTRA;
-		}
-
-		/* get ourselves some bids */
-		b = finner_bid(tp, tz);
-
-		/* sanitise and maybe cut the whole thing */
-		if (b.leftover) {
-			const size_t cz = b.leftover;
-
-			if (LIKELY(cz < tz)) {
-				/* cut! put this bid into half-term 1 */
-				rv->annos[nb].x = (extent_t){x.sta, x.end - cz};
-				rv->annos[nb++].b = b;
-				/* massage pointers for the other half */
-				x.sta += tz - cz;
-				tp += tz - cz;
-				tz = cz;
-				goto rebid;
-			} else {
-				/* otherwise it's rubbish again */
-				b = fn_nul_bid;
-			}
-		} else if (!b.bid) {
-			/* check for soft separators */
-			size_t fj, ej;
-
-			/* find first soft separator */
-			for (fj = 0U; fj < tz &&
-				     (unsigned char)(tp[fj] - ' ') >= 0x10U;
-			     fj++);
-			/* find end of soft-sep streak */
-			for (ej = fj + 1U; ej < tz &&
-				     (unsigned char)(tp[ej] - ' ') < 0x10U;
-			     ej++);
-			if (ej < tz) {
-				/* construct thing we're bidding for */
-				tz = fj;
-				x.end = x.sta + fj;
-
-				/* change I-th TA by side-effect */
-				ta->annos[i].x.sta += ej;
-
-				/* just so we see the rest
-				 * in the next iteration */
-				i--;
-				goto rebid;
-			}
-		}
-
-		/* assign and move on */
-		rv->annos[nb].x = x;
-		rv->annos[nb++].b = b;
-	}
-	/* assign our findings, and copy base and bbox */
-	rv->base = ta->base;
-	rv->nannos = nb;
-	rv->bbox = ta->bbox;
-	return rv;
-#undef TBIDS_EXTRA
-}
-
-/* collectors
- *
- * Go through bids present in TB and merge adjacent ones into an
- * annotated collection. */
-static struct co_terms_retval_s*
-co_tcoll(struct co_terms_retval_s *tb)
-{
-	static struct co_terms_retval_s *rv;
-	static size_t rz;
-	size_t nc = 0U;
-	size_t lastb = 0U;
-
-#define TCOLL_EXTRA	(sizeof(*rv) / sizeof(*rv->annos))
-	_Static_assert(TCOLL_EXTRA > 0U, "tcoll array type is bigger than header");
-
-	if (UNLIKELY(rv == NULL && tb == NULL)) {
-		/* just return */
-		return NULL;
-	} else if (UNLIKELY(tb == NULL)) {
-		free(rv);
-		rv = NULL;
-		return NULL;
-	} else if (UNLIKELY(rv == NULL)) {
-		/* get a comfy cushion */
-		rv = calloc(4096U, sizeof(*rv->annos));
-		rz = 4096U - TCOLL_EXTRA;
-	}
-
-	/* preset RV with goodness */
-	rv->base = tb->base;
-	rv->bbox = tb->bbox;
-	for (size_t i = 0U; i < tb->nannos; i++) {
-		const struct anno_s *const av = tb->annos + i;
-		const size_t na = tb->nannos - i;
-		fn_bid_t c;
-
-		if (!av->b.bid) {
-			continue;
-		} else if ((c = finner_collect(av, na), !c.bid)) {
-			continue;
-		} else if (i == 0U && UNLIKELY(!c.span)) {
-			/* huh?  this must be broken */
-			continue;
-		}
-		/* copy all tokens from LASTB to I, if space there is */
-		if (UNLIKELY(nc + (i - lastb) + c.span + 1U > rz)) {
-			/* resize */
-			const size_t olz = rz + TCOLL_EXTRA;
-			const size_t least = nc + (i - lastb) + c.span + 1U;
-			const size_t nuz = ROUNDLEASTTO(2U * olz, least, 4096U);
-
-			rv = recalloc(rv, olz, nuz, sizeof(*rv->annos));
-			rz = nuz - TCOLL_EXTRA;
-		}
-		memcpy(rv->annos + nc,
-		       tb->annos + lastb, (i - lastb) * sizeof(*rv->annos));
-		/* adjust */
-		nc += (i - lastb);
-		lastb = i + (c.bid == FINNER_DEGR);
-
-		if (UNLIKELY(!c.span)) {
-			/* we've got to cut this short */
-			rv->bbox.end = tb->annos[i - 1U].x.end;
-			break;
-		} else if (c.bid != FINNER_DEGR) {
-			/* merge the extents */
-			rv->annos[nc].x.sta = tb->annos[i].x.sta;
-			rv->annos[nc].x.end = tb->annos[i + c.span - 1U].x.end;
-			/* now copy the beef */
-			rv->annos[nc].b = c;
-			/* that's it */
-			nc++;
-		}
-		i += c.span - 1U;
-	}
-	/* special case when there was no copying at all */
-	if (!nc && !lastb) {
-		return tb;
-	}
-	/* copy the rest of the annos */
-	if (nc + (tb->nannos - lastb) > rz) {
-		/* resize */
-		const size_t olz = rz + TCOLL_EXTRA;
-		const size_t least = nc + (tb->nannos - lastb);
-		const size_t nuz = ROUNDLEASTTO(2U * olz, least, 4096U);
-
-		rv = recalloc(rv, olz, nuz, sizeof(*rv->annos));
-		rz = nuz - TCOLL_EXTRA;
-	}
-	memcpy(rv->annos + nc,
-	       tb->annos + lastb, (tb->nannos - lastb) * sizeof(*rv->annos));
-	/* adjust */
-	nc += (tb->nannos - lastb);
-
-	/* assign our findings, and copy base and bbox */
-	rv->nannos = nc;
-	return rv;
-#undef TCOLL_EXTRA
 }
 
 /* terminators */
@@ -558,38 +255,18 @@ co_textr(const struct ctx_s *ctx, const struct co_terms_retval_s *ta)
 			/* stuff beyond the bounding box needs to be fed
 			 * into the buffer again in the next iteration */
 			break;
-		} else if (b.bid || ctx->allp) {
-			if (b.bid < FINNER_NTOKENS) {
-				/* primitive i.e. non-collective token */
-				fwrite(tp, sizeof(*tp), tz, stdout);
-			} else if (i + b.span < ta->nannos) {
-				for (size_t j = 1U; j < b.span; j++) {
-					const extent_t px = ta->annos[i + j].x;
-					const char *pp = ta->base + px.sta;
-					const size_t pz = px.end - px.sta;
-
-					fwrite(pp, sizeof(*pp), pz, stdout);
-					fputc(' ', stdout);
-				}
-				/* write final one */
-				const extent_t px = ta->annos[i + b.span].x;
-				const char *pp = ta->base + px.sta;
-				const size_t pz = px.end - px.sta;
-
-				fwrite(pp, sizeof(*pp), pz, stdout);
-			}
-			fputc('\t', stdout);
-			fputs(finner_bidstr[b.bid], stdout);
-			if (b.state && finner_statestr[b.bid]) {
-				fputc('(', stdout);
-				fputs(finner_statestr[b.bid](b.state), stdout);
-				fputc(')', stdout);
-			}
-			fputc('\t', stdout);
-			fprintf(stdout, "[%zu,%zu)",
-				x.sta + ctx->abs, x.end + ctx->abs);
-			fputc('\n', stdout);
+		} else if (UNLIKELY(b.state < 0)) {
+			/* who put that here? */
+			continue;
 		}
+		/* reproduce the extent */
+		fwrite(tp, sizeof(*tp), tz, stdout);
+		fputc('\t', stdout);
+		fputs(B(b), stdout);
+		fputc('\t', stdout);
+		fprintf(stdout, "[%zu,%zu)",
+			x.sta + ctx->abs, x.end + ctx->abs);
+		fputc('\n', stdout);
 	}
 	return;
 }
@@ -611,7 +288,7 @@ co_tanno(const struct ctx_s *UNUSED(ctx), const struct co_terms_retval_s *ta)
 			/* stuff beyond the bounding box needs to be fed
 			 * into the buffer again in the next iteration */
 			break;
-		} else if (b.bid && this >= last) {
+		} else if (b.state >= 0 && this >= last) {
 			/* print from last streak to here */
 			const size_t llen = this - last;
 			const size_t tlen = x.end - this;
@@ -622,12 +299,7 @@ co_tanno(const struct ctx_s *UNUSED(ctx), const struct co_terms_retval_s *ta)
 			fwrite(ta->base + this, sizeof(char), tlen, stdout);
 			colourp && fputs("\x1b[0;2m", stdout);
 			fputc('/', stdout);
-			fputs(finner_bidstr[b.bid], stdout);
-			if (b.state && finner_statestr[b.bid]) {
-				fputc('(', stdout);
-				fputs(finner_statestr[b.bid](b.state), stdout);
-				fputc(')', stdout);
-			}
+			fputs(B(b), stdout);
 			colourp && fputs("\x1b[0m", stdout);
 
 			last = x.end;
@@ -657,12 +329,10 @@ proc1(const struct ctx_s *ctx, const char *fn)
 	ctxcpy.abs = 0U;
 	for (ssize_t npr = 0;; ctxcpy.abs += npr) {
 		const struct co_snarf_retval_s *rd;
-		struct co_terms_retval_s *tv;
+		const struct co_terms_retval_s *tv;
 
 		rd = co_snarf(fd, npr);
 		tv = co_terms(rd);
-		tv = co_tbids(tv);
-		tv = co_tcoll(tv);
 
 		if (UNLIKELY(tv == NULL)) {
 			break;

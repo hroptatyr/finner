@@ -1,6 +1,6 @@
 /*** finner.h -- main snippet
  *
- * Copyright (C) 2014-2015 Sebastian Freundt
+ * Copyright (C) 2014-2018 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
@@ -38,65 +38,47 @@
 #define INCLUDED_finner_h_
 #include <stdint.h>
 
-typedef enum {
-	FINNER_TERM,
-	FINNER_FIGI,
-	FINNER_ISIN,
-	FINNER_LEI,
-	FINNER_CUSIP,
-	FINNER_SEDOL,
-	FINNER_CCY,
-	FINNER_FXPAIR,
-	FINNER_NUM,
-	FINNER_WKN,
-	FINNER_DATE,
-	FINNER_TIME,
-	FINNER_UNIT_1,
-	FINNER_NTOKENS,
-
-	/* collections here */
-	FINNER_AMT,
-	FINNER_NTAGS,
-
-	/* degrading */
-	FINNER_DEGR = -1,
-} fn_tok_t;
+/**
+ * Bidders are expected to respond with a state >= 0. */
+typedef intptr_t fn_state_t;
 
 /**
- * We'll do anonymous bidding.  Registered bidders are asked in
- * sequence to submit a tender.  The first bidder with a bid different
- * from FINNER_TERM will seal the deal.
- *
- * Optionally, the bidder can submit a tender for only a *prefix* of the
- * term string in question.  In that case LEFTOVER must be the number
- * of bytes the bidder chose to ignore.  Internally, this will result
- * in the term being cut in two halves, the prefix one with a bid, and
- * a new term constructed from the left-overs that is subject to bidding
- * in the next round.
- *
- * The STATE value can be used by the bidder to record some state.
- * Refer to the documentation of the bidder in question to find out
- * about STATE. */
+ * Return type for bidders.  STATE (if > 0) is used as a const char*.
+ * If optional print routine is given, STATE will be turned into
+ * a string through evaluation. */
 typedef struct {
-	fn_tok_t bid;
-	union {
-		unsigned int leftover;
-		unsigned int span;
-	};
-	uintptr_t state;
+	fn_state_t state;
+	const char *(*print)(fn_state_t state);
 } fn_bid_t;
-
-#define fn_nul_bid	((fn_bid_t){FINNER_TERM})
 
 typedef struct {
 	size_t sta;
 	size_t end;
 } extent_t;
 
-struct anno_s {
-	extent_t x;
+typedef struct {
 	fn_bid_t b;
-};
+	extent_t x;
+} anno_t;
+
+
+extern fn_bid_t fn_wkn(const char*, size_t);
+extern fn_bid_t fn_num(const char*, size_t);
+extern fn_bid_t fn_isin(const char*, size_t);
+extern fn_bid_t fn_figi(const char*, size_t);
+extern fn_bid_t fn_cusip(const char*, size_t);
+extern fn_bid_t fn_sedol(const char*, size_t);
+extern fn_bid_t fn_lei(const char*, size_t);
+extern fn_bid_t fn_fxpair(const char*, size_t);
+extern fn_bid_t fn_date_y1(const char*, size_t);
+extern fn_bid_t fn_date_yl(const char*, size_t);
+extern fn_bid_t fn_date_m1(const char*, size_t);
+extern fn_bid_t fn_date_m2(const char*, size_t);
+extern fn_bid_t fn_time(const char*, size_t);
+extern fn_bid_t fn_ccy(const char*, size_t);
+extern fn_bid_t fn_amt(const char*, size_t);
+
+extern void fn_ccy_for_amt(fn_bid_t);
 
 
 /* convenience */
@@ -114,6 +96,29 @@ fn_extent_dist(extent_t a, extent_t b)
 		return a.sta - b.end;
 	}
 	return 0U;
+}
+
+#define eob	'\377'
+
+static inline int
+iseob(int c)
+{
+/* modelled after ctype.h's isX() routines. */
+	return c == eob;
+}
+
+/* turn bid into a string */
+static inline const char*
+B(fn_bid_t b)
+{
+	return !b.print ? (const char*)b.state : b.print(b.state);
+}
+
+/* turn string into bid */
+static inline fn_bid_t
+S(const char *x)
+{
+	return (fn_bid_t){(fn_state_t)x};
 }
 
 #endif	/* INCLUDED_finner_h_ */

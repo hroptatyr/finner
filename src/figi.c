@@ -1,10 +1,10 @@
 /*** figi.c -- checker for FIGIs
  *
- * Copyright (C) 2014-2015 Sebastian Freundt
+ * Copyright (C) 2014-2018 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
- * This file is part of numchk.
+ * This file is part of finner.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -38,18 +38,33 @@
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+#include "finner.h"
 #include "nifty.h"
-#include "figi.h"
 
-static char
-calc_chk(const char *str, size_t UNUSED(len))
+#ifdef RAGEL_BLOCK
+%%{
+	machine finner;
+
+	figi = "BBG" (consonant | digit){8} digit @{c(figi)} ;
+}%%
+#endif	/* RAGEL_BLOCK */
+
+
+fn_bid_t
+fn_figi(const char *str, size_t len)
 {
-/* calculate the check digit for an expanded ISIN */
-	unsigned int sum = 0U;
+	uint_fast32_t sum = 0U;
+
+	if (len < 12U) {
+		return (fn_bid_t){-1};
+	} else if (str[0U] != 'B' || str[1U] != 'B' || str[2U] != 'G') {
+		/* currently only BB is registered as certified provider */
+		return (fn_bid_t){-1};
+	}
 
 	/* use the left 11 digits */
 	for (size_t i = 0U; i < 11U; i++) {
-		unsigned int d;
+		uint_fast32_t d;
 
 		switch (str[i]) {
 		case '0' ... '9':
@@ -62,8 +77,6 @@ calc_chk(const char *str, size_t UNUSED(len))
 		case 'G':
 		case 'H':
 		case 'J':
-			d = 10 + (str[i] - 'A');
-			break;
 		case 'K':
 		case 'L':
 		case 'M':
@@ -73,50 +86,34 @@ calc_chk(const char *str, size_t UNUSED(len))
 		case 'R':
 		case 'S':
 		case 'T':
-			d = 20 + (str[i] - 'K');
-			break;
 		case 'V':
 		case 'W':
 		case 'X':
 		case 'Y':
 		case 'Z':
-			d = 30 + (str[i] - 'U');
+			d = 10U + (str[i] - 'A');
 			break;
 		default:
-			return '\0';
+			return (fn_bid_t){-1};
 		}
 
-		if (i % 2U) {
-			d *= 2U;
-		}
+		/* double every other */
+		d <<= (i % 2U);
 		sum += (d / 10U) + (d % 10U);
 	}
-	/* sum can be at most 665, so check digit is */
-	return (char)(((700U - sum) % 10U) ^ '0');
-}
-
-
-/* class implementation */
-fn_bid_t
-fn_figi_bid(const char *str, size_t len)
-{
-	/* common cases first */
-	if (len != 12U) {
-		return fn_nul_bid;
-	} else if (str[0U] != 'B' || str[1U] != 'B' || str[2U] != 'G') {
-		/* currently only BB is registered as certified provider */
-		return fn_nul_bid;
-	}
-
-	with (char chk = calc_chk(str, len)) {
-		if (!chk) {
-			return fn_nul_bid;
-		} else if (chk != str[11U]) {
-			return fn_nul_bid;
+	with (uint_fast32_t d = (unsigned char)(str[11U] ^ '0')) {
+		if (d >= 10U) {
+			/* last one must be a digit */
+			return (fn_bid_t){-1};
 		}
+		sum += d;
 	}
-	/* bid high */
-	return (fn_bid_t){FINNER_FIGI};
+	/* have a look at the check equation */
+	if ((sum %= 10)) {
+		/* check digit don't match */
+		return (fn_bid_t){-1};
+	}
+	return S("figi");
 }
 
 /* figi.c ends here */

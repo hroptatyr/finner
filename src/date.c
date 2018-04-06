@@ -1,6 +1,6 @@
 /*** date.c -- checker for dates
  *
- * Copyright (C) 2014-2015 Sebastian Freundt
+ * Copyright (C) 2014-2018 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
@@ -39,10 +39,28 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <assert.h>
+#include "finner.h"
 #include "nifty.h"
-#include "date.h"
 
-#define DIGITP(x)	(((unsigned char)((x) ^ '0')) < 10U)
+#define DIGIT(x)	((unsigned char)((x) ^ '0'))
+#define DIGITP(x)	(DIGIT(x) < 10U)
+
+#ifdef RAGEL_BLOCK
+%%{
+	machine finner;
+
+	m = 
+		"Jan" "uary"? | "Feb" "ruary"? | "Mar" "ch"? |
+		"Apr" "il"? | "May" | "Jun" "e"? |
+		"Jul" "y"? | "Aug" "ust"? | "Sep" "tember"? |
+		"Oct" "ober"? | "Nov" "ember"? | "Dec" "ember"? ;
+	date =
+		digit{1,2} (" " | "-" | "/") m (" " | "-" | "/") digit{4} @{c(date_m2)} |
+		m " " digit{1,2} ", " digit{4} @{c(date_m1)} |
+		digit{4} ("/" | "-")? digit{2} ("/" | "-")? digit{2} @{c(date_y1)} |
+		digit{1,2} ("." | "/")? digit{1,2} ("." | "/")? digit{4} @{c(date_yl)} ;
+}%%
+#endif	/* RAGEL_BLOCK */
 
 static bool
 check_y(const char s[static 4U])
@@ -60,13 +78,22 @@ check_y(const char s[static 4U])
 }
 
 static bool
-check_m(const char s[static 4U])
+check_m(const char s[static 2U])
 {
 	switch (s[0U]) {
 	case '0':
-		return (unsigned int)(s[1U] ^ '0') > 0U;
+		return DIGIT(s[1U]) > 0U;
 	case '1':
-		return (unsigned int)(s[1U] ^ '0') <= 2U;
+		return DIGIT(s[1U]) <= 2U || !DIGITP(s[1U]);
+	case '2':
+	case '3':
+	case '4':
+	case '5':
+	case '6':
+	case '7':
+	case '8':
+	case '9':
+		return !DIGITP(s[1U]);
 	default:
 		break;
 	}
@@ -74,108 +101,138 @@ check_m(const char s[static 4U])
 }
 
 static bool
-check_d(const char s[static 4U])
+check_d(const char s[static 2U])
 {
 	switch (s[0U]) {
 	case '0':
-		return (unsigned int)(s[1U] ^ '0') > 0U;
+		return DIGIT(s[1U]) > 0U && DIGITP(s[1U]);
 	case '1':
 	case '2':
 		return true;
 	case '3':
-		return (unsigned int)(s[1U] ^ '0') <= 1U;
+		return DIGIT(s[1U]) <= 1U || !DIGITP(s[1U]);
+	case '4':
+	case '5':
+	case '6':
+	case '7':
+	case '8':
+	case '9':
+		return !DIGITP(s[1U]);
 	}
 	return false;
 }
 
 
-/* class implementation */
 fn_bid_t
-fn_date_bid(const char *str, size_t len)
+fn_date_y1(const char *str, size_t len)
 {
-	char sep = '\0';
-
-	/* at least 2 digits we want */
-	if (!(len == 8U || len == 10U)) {
-		return fn_nul_bid;
-	} else if (!DIGITP(str[0U]) || !DIGITP(str[1U])) {
-		return fn_nul_bid;
+/* check if str is a date with the year upfront */
+	if (len < 8U) {
+		return (fn_bid_t){-1};
+	} else if (!DIGITP(str[4U]) && str[4U] != str[7U]) {
+		/* separators don't match*/
+		return (fn_bid_t){-1};
+	} else if (!check_y(str + 0U)) {
+		/* year's fucked */
+		return (fn_bid_t){-1};
+	} else if (!check_m(str + 4U + !DIGITP(str[4U]))) {
+		/* Month is cunted, in that order */
+		return (fn_bid_t){-1};
+	} else if (!check_d(str + 6U + (!DIGITP(str[4U]) << 1U))) {
+		/* Day is fucked, in that order */
+		return (fn_bid_t){-1};
 	}
-	if (DIGITP(str[2U])) {
-		/* could be YYYY-MM-DD */
-		if (!DIGITP(str[3U])) {
-			return fn_nul_bid;
-		}
-		if (DIGITP(str[4U])) {
-			/* must be YYYYMMDD */
-			if (!DIGITP(str[5U]) ||
-			    !DIGITP(str[6U]) ||
-			    !DIGITP(str[7U])) {
-				/* apparently not */
-				return fn_nul_bid;
-			} else if (len != 8U) {
-				return fn_nul_bid;
-			} else if (!check_y(str + 0U)) {
-				return fn_nul_bid;
-			} else if (!check_m(str + 4U)) {
-				return fn_nul_bid;
-			} else if (!check_d(str + 6U)) {
-				return fn_nul_bid;
-			}
-		} else {
-			switch (str[4U]) {
-			case '/':
-			case '-':
-				if (len == 10U) {
-					sep = str[4U];
-					break;
-				}
-			default:
-				return fn_nul_bid;
-			}
-			if (!DIGITP(str[5U]) || !DIGITP(str[6U])) {
-				return fn_nul_bid;
-			} else if (str[7U] != sep) {
-				return fn_nul_bid;
-			} else if (!DIGITP(str[8U]) || !DIGITP(str[9U])) {
-				return fn_nul_bid;
-			} else if (!check_y(str + 0U)) {
-				return fn_nul_bid;
-			} else if (!check_m(str + 5U)) {
-				return fn_nul_bid;
-			} else if (!check_d(str + 8U)) {
-				return fn_nul_bid;
-			}
-		}
+
+	/* we survived the else-if tornado */
+	return S("date");
+}
+
+fn_bid_t
+fn_date_yl(const char *str, size_t len)
+{
+/* check if str is a date with the year last */
+	size_t sep1, sep2;
+
+	if (len < 8U) {
+		return (fn_bid_t){-1};
+	} else if (DIGITP(str[sep1 = 1U]) && DIGITP(str[sep1 = 2U])) {
+		/* no separator? */
+		return (fn_bid_t){-1};
+	} else if (DIGITP(str[sep2 = 3U]) &&
+		   DIGITP(str[sep2 = 4U]) &&
+		   DIGITP(str[sep2 = 5U])) {
+		/* no second separator? */
+		return (fn_bid_t){-1};
+	} else if (str[sep1] != str[sep2]) {
+		/* separators don't match */
+		return (fn_bid_t){-1};
+	} else if (!check_y(str + sep2 + 1U)) {
+		/* year's fucked */
+		return (fn_bid_t){-1};
+	} else if (check_m(str + sep1 + 1U) && check_d(str + 0U)) {
+		/* day month order worked */
+		;
+	} else if (check_m(str + 0U) && check_d(str + sep1 + 1U)) {
+		/* month day order worked */
+		;
 	} else {
-		switch (str[2U]) {
-		case '.':
-		case '/':
-			if (len == 10U) {
-				sep = str[2U];
-				break;
-			}
-		default:
-			return fn_nul_bid;
-		}
-		if (!DIGITP(str[3U]) || !DIGITP(str[4U])) {
-			return fn_nul_bid;
-		} else if (str[5U] != sep) {
-			return fn_nul_bid;
-		} else if (!DIGITP(str[6U]) || !DIGITP(str[7U]) ||
-			   !DIGITP(str[8U]) || !DIGITP(str[9U])) {
-			return fn_nul_bid;
-		} else if (!check_y(str + 6U)) {
-			return fn_nul_bid;
-		} else if (!check_m(str + 0U) && !check_d(str + 3U)) {
-			return fn_nul_bid;
-		} else if (!check_d(str + 0U) || !check_d(str + 3U)) {
-			return fn_nul_bid;
-		}
+		return (fn_bid_t){-1};
 	}
 
-	/* bid just any number really */
-	return (fn_bid_t){FINNER_DATE};
+	/* we survived the else-if tornado */
+	return S("date");
+}
+
+fn_bid_t
+fn_date_m1(const char *str, size_t len)
+{
+/* month first */
+	const char *sp;
+
+	if (len < 11U) {
+		return (fn_bid_t){-1};
+	}
+
+	sp = memchr(str + 3U, ' ', len - 3U);
+	if (sp < str + 3U || sp > str + 9U) {
+		/* how did we get here? */
+		return (fn_bid_t){-1};
+	} else if (!check_d(sp + 1U)) {
+		/* day is wrong */
+		return (fn_bid_t){-1};
+	} else if (!check_y(str + len - 4U)) {
+		/* year doesn't work */
+		return (fn_bid_t){-1};
+	}
+
+	return S("date");
+}
+
+fn_bid_t
+fn_date_m2(const char *str, size_t len)
+{
+/* month second */
+	size_t sep1, sep2;
+
+	if (len < 10U) {
+		return (fn_bid_t){-1};
+	} else if (!check_d(str)) {
+		return (fn_bid_t){-1};
+	} else if (DIGITP(str[sep1 = 1U]) && DIGITP(str[sep1 = 2U])) {
+		/* no separator? */
+		return (fn_bid_t){-1};
+	} else if (DIGITP(str[sep2 = len - 5U])) {
+		/* no second separator? */
+		return (fn_bid_t){-1};
+	} else if (str[sep1] != str[sep2]) {
+		/* separators don't match */
+		return (fn_bid_t){-1};
+	} else if (!check_y(str + sep2 + 1U)) {
+		/* year doesn't work */
+		return (fn_bid_t){-1};
+	}
+
+	return S("date");
 }
 
 /* date.c ends here */

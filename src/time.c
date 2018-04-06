@@ -1,4 +1,4 @@
-/*** num.c -- checker for numbers
+/*** time.c -- checker for times
  *
  * Copyright (C) 2014-2018 Sebastian Freundt
  *
@@ -37,35 +37,79 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <assert.h>
-#include <ctype.h>
-#include "nifty.h"
 #include "finner.h"
+#include "nifty.h"
+
+#define DIGIT(x)	((unsigned char)((x) ^ '0'))
+#define DIGITP(x)	(DIGIT(x) < 10U)
 
 #ifdef RAGEL_BLOCK
 %%{
 	machine finner;
 
-	int = ("+" | "-")? /[1-9]/ digit* ;
-
-	float = ("+" | "-")? "0" ("." | ",") digit+
-		| ("+" | "-")? /[1-9]/ digit* ("." | ",") digit+ ;
-
-	num = (int | float) @{c(num)} ;
+	h = digit{1,2} " "? ("am" | "pm" | "AM" | "PM") ;
+	hm = digit{1,2} ("h"|":") digit{2} (" "? ("am" | "pm" | "AM" | "PM"))? ;
+	hms = digit{1,2} ":" digit{2} ":" digit{2} ;
+	time = (h | hm | hms) @{c(time)} ;
 }%%
 #endif	/* RAGEL_BLOCK */
 
+static bool
+check_h(const char s[static 2U])
+{
+	switch (DIGIT(s[0U])) {
+	case 0U:
+	case 1U:
+		return DIGITP(s[1U]) || !DIGITP(s[1U]);
+	case 2U:
+		return DIGIT(s[1U]) <= 4U || !DIGITP(s[1U]);
+	default:
+		break;
+	}
+	return DIGITP(s[0U]) && !DIGITP(s[1U]);
+}
+
+static bool
+check_m(const char s[static 2U])
+{
+	return DIGIT(s[0U]) < 6U && DIGITP(s[1U]);
+}
+
+static bool
+check_s(const char s[static 2U])
+{
+	return DIGIT(s[0U]) < 6U && DIGITP(s[1U]) ||
+		/* allow leap seconds */
+		DIGIT(s[0U]) == 6U && DIGIT(s[1U]) == 0U;
+}
+
 
 fn_bid_t
-fn_num(const char *str, size_t len)
+fn_time(const char *str, size_t len)
 {
-	if (isalnum(str[-1]) || isalnum(str[len]) || iseob(str[len])) {
-		/* there's more */
+	if (len < 3U) {
+		return (fn_bid_t){-1};
+	} else if (!check_h(str + 0U)) {
+		/* hour doesn't check out */
+		return (fn_bid_t){-1};
+	} else if (len <= 5U && (str[len - 1U] | 0x20) == 'm') {
+		/* obviously just the time and the am/pm indicator */
+		;
+	} else if (!check_m(str + 2U + DIGITP(str[1U]))) {
+		/* minute is b0rked */
+		return (fn_bid_t){-1};
+	} else if (len > 5U && (str[len - 1U] | 0x20) == 'm') {
+		/* am/pm indicator has no seconds */
+		;
+	} else if (len > 5U && !check_s(str + 2U + DIGITP(str[1U]) + 3U)) {
+		/* seconds don't work */
 		return (fn_bid_t){-1};
 	}
 
-	/* bid bid bid */
-	return S("num");
+	/* we survived the else-if tornado */
+	return S("time");
 }
 
-/* num.c ends here */
+/* time.c ends here */

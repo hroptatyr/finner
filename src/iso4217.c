@@ -1,6 +1,6 @@
 /*** iso4217.c -- currency symbols
  *
- * Copyright (C) 2008-2017 Sebastian Freundt
+ * Copyright (C) 2008-2018 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@fresse.org>
  *

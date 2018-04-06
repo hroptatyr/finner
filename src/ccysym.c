@@ -1,6 +1,6 @@
-/*** ccysym.c -- checker for currencies expressed by symbols
+/*** ccysym.c -- checker for currencies represented by their symbols
  *
- * Copyright (C) 2014-2015 Sebastian Freundt
+ * Copyright (C) 2014-2018 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
@@ -38,238 +38,55 @@
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+#include "finner.h"
 #include "nifty.h"
-#include "ccysym.h"
 
-#include "iso4217.h"
+#ifdef RAGEL_BLOCK
+%%{
+	machine finner;
 
-#define DIGITP(x)	(((unsigned char)((x) ^ '0')) < 10U)
-
-
-/* class implementation */
-fn_bid_t
-fn_ccysym_bid(const char *str, size_t len)
-{
-	const char *sp = str;
-	const char *const ep = str + len;
-	iso4217_t c = UNK;
-
-	/* dollars first */
-	if (len >= 2U && sp[1U] == '$') {
-		/* x$ */
-		switch (*sp) {
-		case 'A':
-			c = AUD;
-			break;
-		case 'B':
-			c = BSD;
-			break;
-		case 'C':
-			c = CAD;
-			break;
-		case 'G':
-			c = GYD;
-			break;
-		case 'S':
-			c = SGD;
-			break;
-		case 'R':
-			c = BRL;
-			break;
-		case 'L':
-			c = LRD;
-			break;
-		case 'N':
-			c = NAD;
-			break;
-		case 'Z':
-			c = ZWL;
-			break;
-		case 'J':
-			c = JMD;
-			break;
-		default:
-			return fn_nul_bid;
-		}
-		sp += 2U;
-		goto fin;
-	} else if (len >= 3U && sp[2U] == '$') {
-		switch (*sp) {
-		case 'H':
-			c = sp[1U] == 'K' ? HKD : UNK;
-			break;
-		case 'A':
-			c = sp[1U] == 'U' ? AUD : UNK;
-			break;
-		case 'G':
-			c = sp[1U] == 'Y' ? GYD : UNK;
-			break;
-		case 'N':
-			c = sp[1U] == 'Z' ? NZD
-				: sp[1U] == 'T' ? TWD
-				: UNK;
-			break;
-		case 'S':
-			c = sp[1U] == 'G' ? SGD
-				: sp[1U] == 'I' ? SBD
-				: UNK;
-			break;
-		case 'U':
-			c = sp[1U] == 'S' ? USD : UNK;
-			break;
-		case 'B':
-			c = sp[1U] == 'Z' ? BZD
-				: sp[1U] == 'D' ? BMD
-				: UNK;
-			break;
-		case 'C':
-			c = sp[1U] == 'I' ? KYD : UNK;
-			break;
-		case 'E':
-			c = sp[1U] == 'C' ? XCD : UNK;
-			break;
-		case 'F':
-			c = sp[1U] == 'J' ? FJD : UNK;
-			break;
-		case 'T':
-			c = sp[1U] == 'T' ? TTD : UNK;
-			break;
-		default:
-			return fn_nul_bid;
-		}
-		sp += 3U;
-		goto fin;
-	}
-	/* otherwise proceed in order */
-	switch (*sp++) {
-	case 'S':
-		if (len >= 3U && *sp++ == 'F' && *sp++ == 'r') {
-			c = CHF;
-			break;
-		}
-		return fn_nul_bid;
-	case 'D':
-		if (len >= 2U && *sp++ == 'M') {
-			c = DEM;
-			break;
-		}
-		return fn_nul_bid;
-	case 'F':
-		if (len >= 2U && *sp++ == 'r') {
-			c = FRF;
-			break;
-		}
-		return fn_nul_bid;
-	case '$':
-		c = USD;
-		break;
-	case 'R':
-		if (len >= 2U && *sp == 'M') {
-			sp++;
-			c = MYR;
-			break;
-		}
-		c = ZAR;
-		break;
-	case 'z':
-		if (len >= 3U && *sp++ == '\xc5' && *sp++ == '\x82') {
-			c = PLN;
-			break;
-		}
-		return fn_nul_bid;
-	case 'B':
-		if (len >= 4U && *sp++ == 'd' && *sp++ == 's' && *sp++ == '$') {
-			c = BBD;
-			break;
-		}
-		return fn_nul_bid;
-
-	case '\xc2':
-		/* GBP, JPY */
-		if (UNLIKELY(len < 2U)) {
-			return fn_nul_bid;
-		}
-		switch (*sp++) {
-		case '\xa3':
-			c = GBP;
-			break;
-		case '\xa5':
-			c = JPY;
-			break;
-		default:
-			return fn_nul_bid;
-		}
-		break;
-	case '\xd6':
-		/* AMD */
-		if (UNLIKELY(len < 2U)) {
-			return fn_nul_bid;
-		}
-		switch (*sp++) {
-		case '\x8f':
-			c = AMD;
-			break;
-		default:
-			return fn_nul_bid;
-		}
-		break;
-	case '\xe0':
-		/* THB */
-		if (UNLIKELY(len < 3U || *sp++ != '\xb8')) {
-			return fn_nul_bid;
-		}
-		switch (*sp++) {
-		case '\xbf':
-			c = THB;
-			break;
-		default:
-			return fn_nul_bid;
-		}
-		break;
-	case '\xe2':
-		/* EUR, NRN */
-		if (UNLIKELY(len < 3U || *sp++ != '\x82')) {
-			return fn_nul_bid;
-		}
-		switch (*sp++) {
-		case '\xac':
-			c = EUR;
-			break;
-		case '\xa6':
-			c = NGN;
-			break;
-		case '\xa9':
-			c = KRW;
-			break;
-		case '\xab':
-			c = VND;
-			break;
-		case '\xb4':
-			c = UAH;
-			break;
-		case '\xb9':
-			c = INR;
-			break;
-		case '\xba':
-			c = TRY;
-			break;
-		default:
-			return fn_nul_bid;
-		}
-		break;
-	default:
-		return fn_nul_bid;
-	}
-fin:
-	/* next must be EP or a digit */
-	if (sp < ep && !DIGITP(*sp)) {
-		return fn_nul_bid;
-	} else if (!c) {
-		return fn_nul_bid;
-	}
-	uintptr_t s = 0U;
-	memcpy(&s, iso4217[c].sym, 4U);
-	return (fn_bid_t){FINNER_CCY, ep - sp, s};
-}
+	ccysym =
+		"A$" @{r("ccy(AUD)")} |
+		"B$" @{r("ccy(BSD)")} |
+		"C$" @{r("ccy(CAD)")} |
+		"G$" @{r("ccy(GYD)")} |
+		"S$" @{r("ccy(SGD)")} |
+		"R$" @{r("ccy(BRL)")} |
+		"L$" @{r("ccy(LRD)")} |
+		"N$" @{r("ccy(NAD)")} |
+		"Z$" @{r("ccy(ZWL)")} |
+		"J$" @{r("ccy(JMD)")} |
+		"HK$" @{r("ccy(HKD)")} |
+		"AU$" @{r("ccy(AUD)")} |
+		"GY$" @{r("ccy(GYD)")} |
+		"NZ$" @{r("ccy(NZD)")} |
+		"SG$" @{r("ccy(SGD)")} |
+		"US$" @{r("ccy(USD)")} |
+		"BZ$" @{r("ccy(BZD)")} |
+		"BD$" @{r("ccy(BMD)")} |
+		"CI$" @{r("ccy(KYD)")} |
+		"EC$" @{r("ccy(XCD)")} |
+		"FJ$" @{r("ccy(FJD)")} |
+		"TT$" @{r("ccy(TTD)")} |
+		"SFr" @{r("ccy(CHF)")} |
+		"DM" @{r("ccy(DEM)")} |
+		"Fr" @{r("ccy(FRF)")} |
+		"RM" @{r("ccy(MYR)")} |
+		"Bds$" @{r("ccy(BBD)")} |
+		"z" 0xc5 0x82 @{r("ccy(PLN)")} |
+		0xc2 0xa3 @{r("ccy(GBP)")} |
+		0xc2 0xa5 @{r("ccy(JPY)")} |
+		0xd6 0x8f @{r("ccy(AMD)")} |
+		0xe0 0xb8 0xbf @{r("ccy(THB)")} |
+		0xe2 0x82 0xac @{r("ccy(EUR)")} |
+		0xe2 0x82 0xa6 @{r("ccy(NGN)")} |
+		0xe2 0x82 0xa9 @{r("ccy(KRW)")} |
+		0xe2 0x82 0xab @{r("ccy(VND)")} |
+		0xe2 0x82 0xb4 @{r("ccy(UAH)")} |
+		0xe2 0x82 0xb9 @{r("ccy(INR)")} |
+		0xe2 0x82 0xba @{r("ccy(TRY)")} |
+		"$" @{r("ccy(USD)")} ;
+}%%
+#endif	/* RAGEL_BLOCK */
 
 /* ccysym.c ends here */

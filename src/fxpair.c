@@ -1,6 +1,6 @@
 /*** fxpair.c -- checker for FX pairs
  *
- * Copyright (C) 2014-2015 Sebastian Freundt
+ * Copyright (C) 2014-2018 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
@@ -38,32 +38,48 @@
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+#include "finner.h"
 #include "nifty.h"
-#include "fxpair.h"
 
 /* allowed isin country codes */
 #include "fxpair-cc.c"
 
 typedef union {
-	uintptr_t u;
+	fn_state_t u;
 	struct {
 		char b[3U];
 		char t[3U];
 	};
 } fxpair_state_t;
 
+#ifdef RAGEL_BLOCK
+%%{
+	machine finner;
+
+	fxpair = ccy ("." | ":" | "/")? ccy @{c(fxpair)} ;
+}%%
+#endif	/* RAGEL_BLOCK */
+
+static const char*
+fxpair(fn_state_t st)
+{
+	static char buf[16U] = "fx(......)";
+	fxpair_state_t s = {st};
+	memcpy(buf + 3U, s.b, 6U);
+	return buf;
+}
+
 
-/* class implementation */
 fn_bid_t
-fn_fxpair_bid(const char *str, size_t len)
+fn_fxpair(const char *str, size_t len)
 {
 	fxpair_state_t s = {0U};
 
 	/* common cases first */
 	if (len < 6U || len > 7U) {
-		return fn_nul_bid;
+		return (fn_bid_t){-1};
 	} else if (!valid_cc_p(str + 0U)) {
-		return fn_nul_bid;
+		return (fn_bid_t){-1};
 	}
 	memcpy(s.b, str, 3U);
 	with (const char *sp = str + 3U) {
@@ -76,24 +92,15 @@ fn_fxpair_bid(const char *str, size_t len)
 			break;
 		}
 		if (!valid_cc_p(sp)) {
-			return fn_nul_bid;
+			return (fn_bid_t){-1};
 		} else if (!memcmp(str, sp, 3U)) {
-			return fn_nul_bid;
+			return (fn_bid_t){-1};
 		}
 		memcpy(s.t, sp, 3U);
 	}
 
 	/* bid just any number really */
-	return (fn_bid_t){FINNER_FXPAIR, 0U, s.u};
-}
-
-const char*
-fn_fxpair_prs(uintptr_t u)
-{
-	static char buf[7U];
-	fxpair_state_t s = {u};
-	memcpy(buf, s.b, 6U);
-	return buf;
+	return (fn_bid_t){s.u, fxpair};
 }
 
 /* fxpair.c ends here */

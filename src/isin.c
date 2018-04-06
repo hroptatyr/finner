@@ -1,10 +1,10 @@
 /*** isin.c -- checker for ISO 6166 security idenfitication numbers
  *
- * Copyright (C) 2014-2015 Sebastian Freundt
+ * Copyright (C) 2014-2018 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
- * This file is part of numchk.
+ * This file is part of finner.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -39,75 +39,76 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <assert.h>
+#include "finner.h"
 #include "nifty.h"
-#include "isin.h"
 
 /* allowed isin country codes */
 #include "isin-cc.c"
 
-static char
-calc_chk(const char *str, size_t len)
-{
-/* calculate the check digit for an expanded ISIN */
-	unsigned int sum = 0U;
+#ifdef RAGEL_BLOCK
+%%{
+	machine finner;
 
-	for (size_t i = !(len % 2U); i < len; i += 2U) {
-		int code = (str[i] ^ '0') * 2;
-		sum += (code / 10) + (code % 10);
-	}
-	for (size_t i = (len % 2U); i < len; i += 2U) {
-		int code = (str[i] ^ '0');
-		sum += code;
-	}
-	/* sum can be at most 198, so check digit is */
-	return (char)(((200U - sum) % 10U) ^ '0');
-}
+	isin = upper{2} upnum{9} digit @{c(isin)} ;
+}%%
+#endif	/* RAGEL_BLOCK */
 
 
-/* class implementation */
 fn_bid_t
-fn_isin_bid(const char *str, size_t len)
+fn_isin(const char *str, size_t len)
 {
-	char buf[24U];
+	uint_fast8_t buf[24U];
 	size_t bsz = 0U;
+	/* for the luhn check */
+	uint_fast32_t dbl[2U] = {0U, 0U};
+	uint_fast32_t one[2U] = {0U, 0U};
+	uint_fast32_t sum;
+	size_t k;
 
-	/* common cases first */
-	if (len != 12) {
-		return fn_nul_bid;
+	if (UNLIKELY(len < 12U)) {
+		return (fn_bid_t){-1};
 	} else if (!valid_cc_p(str)) {
-		return fn_nul_bid;
+		return (fn_bid_t){-1};
 	}
 
 	/* expand the left 11 digits */
-	for (size_t i = 0U; i < 11; i++) {
+	for (size_t i = 0U; i < 11U; i++) {
 		switch (str[i]) {
 		case '0' ... '9':
-			buf[bsz++] = str[i];
+			buf[bsz++] = (unsigned char)(str[i] ^ '0');
 			break;
 		case 'A' ... 'J':
-			buf[bsz++] = '1';
-			buf[bsz++] = (char)((str[i] - 'A') ^ '0');
+			buf[bsz++] = 1U;
+			buf[bsz++] = (unsigned char)(str[i] - 'A');
 			break;
 		case 'K' ... 'T':
-			buf[bsz++] = '2';
-			buf[bsz++] = (char)((str[i] - 'K') ^ '0');
+			buf[bsz++] = 2U;
+			buf[bsz++] = (unsigned char)(str[i] - 'K');
 			break;
 		case 'U' ... 'Z':
-			buf[bsz++] = '3';
-			buf[bsz++] = (char)((str[i] - 'U') ^ '0');
+			buf[bsz++] = 3U;
+			buf[bsz++] = (unsigned char)(str[i] - 'U');
 			break;
 		default:
-			return fn_nul_bid;
+			return (fn_bid_t){-1};
 		}
 	}
-	with (char chk = calc_chk(buf, bsz)) {
-		if (chk != str[11U]) {
-			/* record state but submit a bid */
-			return fn_nul_bid;
-		}
+	if ((buf[bsz++] = (unsigned char)(str[11U] ^ '0')) >= 10U) {
+		/* last one must be a digit */
+		return (fn_bid_t){-1};
 	}
-	/* bid bid bid */
-	return (fn_bid_t){FINNER_ISIN};
+	for (size_t i = k = 0U; i < bsz; i++, k ^= 1U) {
+		uint_fast32_t c = 2U * buf[i];
+		dbl[k] += c;
+		one[k] += c >= 10U;
+	}
+	/* decide now which sum was the 2-weighted one */
+	sum = dbl[k ^ 1U] / 2U + dbl[k] + one[k];
+	if ((sum %= 10)) {
+		/* check digit don't match */
+		return (fn_bid_t){-1};
+	}
+	return S("isin");
 }
 
 /* isin.c ends here */

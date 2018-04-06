@@ -1,10 +1,10 @@
 /*** sedol.c -- checker for SEDOLs
  *
- * Copyright (C) 2014-2015 Sebastian Freundt
+ * Copyright (C) 2014-2018 Sebastian Freundt
  *
  * Author:  Sebastian Freundt <freundt@ga-group.nl>
  *
- * This file is part of numchk.
+ * This file is part of finner.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -38,57 +38,79 @@
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+#include "finner.h"
 #include "nifty.h"
-#include "sedol.h"
 
-static char
-calc_chk(const char *str, size_t UNUSED(len))
+#ifdef RAGEL_BLOCK
+%%{
+	machine finner;
+
+	sedol = (consonant | digit){6} digit @{c(sedol)} ;
+}%%
+#endif	/* RAGEL_BLOCK */
+
+
+fn_bid_t
+fn_sedol(const char *str, size_t len)
 {
-/* calculate the check digit for an expanded ISIN */
-	unsigned int w[] = {1U, 3U, 1U, 7U, 3U, 9U};
-	unsigned int sum = 0U;
+	static const uint_fast32_t w[] = {1U, 3U, 1U, 7U, 3U, 9U};
+	uint_fast32_t sum = 0U;
 
-	/* use the left 6 digits */
+	/* common cases first */
+	if (len < 7U) {
+		return (fn_bid_t){-1};
+	}
+
+	/* use the left 6 chars */
 	for (size_t i = 0U; i < 6U; i++) {
-		unsigned int d;
+		uint_fast32_t d;
 
 		switch (str[i]) {
 		case '0' ... '9':
 			d = (str[i] ^ '0');
 			break;
-		case 'A' ... 'Z':
-			d = 10 + (str[i] - 'A');
+		case 'B':
+		case 'C':
+		case 'D':
+		case 'F':
+		case 'G':
+		case 'H':
+		case 'J':
+		case 'K':
+		case 'L':
+		case 'M':
+		case 'N':
+		case 'P':
+		case 'Q':
+		case 'R':
+		case 'S':
+		case 'T':
+		case 'V':
+		case 'W':
+		case 'X':
+		case 'Y':
+		case 'Z':
+			d = 10U + (str[i] - 'A');
 			break;
 		default:
-			return 0U;
+			return (fn_bid_t){-1};
 		}
 
 		sum += w[i] * d;
 	}
-
-	/* sum can be at most 840, so check digit is */
-	return (char)(((840U - sum) % 10U) ^ '0');
-}
-
-
-/* class implementation */
-fn_bid_t
-fn_sedol_bid(const char *str, size_t len)
-{
-	/* common cases first */
-	if (len != 7U) {
-		return fn_nul_bid;
-	}
-
-	with (char chk = calc_chk(str, len)) {
-		if (!chk) {
-			return fn_nul_bid;
-		} else if (chk != str[6U]) {
-			return fn_nul_bid;
+	with (uint_fast32_t d = (unsigned char)(str[6U] ^ '0')) {
+		if (d >= 10U) {
+			/* last one must be a digit */
+			return (fn_bid_t){-1};
 		}
+		sum += d;
 	}
-	/* bid just any number really */
-	return (fn_bid_t){FINNER_SEDOL};
+	/* have a look at the check equation */
+	if ((sum %= 10)) {
+		/* check digit don't match */
+		return (fn_bid_t){-1};
+	}
+	return S("sedol");
 }
 
 /* sedol.c ends here */
