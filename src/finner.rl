@@ -27,7 +27,7 @@
 	include finner "ccy.c";
 	include finner "ccysym.rl";
 	include finner "num.c";
-	include finner "unit-1.rl";
+	include finner "unit-1.c";
 	include finner "amt.c";
 	include finner "fxpair.c";
 	include finner "date.c";

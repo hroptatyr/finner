@@ -34,7 +34,7 @@ libfinner_a_SOURCES += fxpair.c
 EXTRA_libfinner_a_SOURCES += fxpair-cc.ccl
 BUILT_SOURCES += fxpair-cc.c
 libfinner_a_SOURCES += num.c
-libfinner_a_SOURCES += unit-1.rl
+libfinner_a_SOURCES += unit-1.c
 libfinner_a_SOURCES += wkn.c
 libfinner_a_SOURCES += ccy.c
 libfinner_a_SOURCES += amt.c
@@ -74,7 +74,7 @@ SUFFIXES += .rlc
 	$(AM_V_GEN) PATH=$(top_builddir)/build-aux:"$${PATH}" \
 		ragel -F1 -C -o $@ $<
 
-finner.rlc: unit-1.rl ccy.c ccysym.rl amt.c time.c date.c
+finner.rlc: unit-1.c ccy.c ccysym.rl amt.c time.c date.c
 
 ## Create preprocessor output (debugging purposes only)
 .c.i:
