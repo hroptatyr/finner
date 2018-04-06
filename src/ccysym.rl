@@ -41,6 +41,5 @@ ccysym =
 	0xe2 0x82 0xb4 @{r("ccy(UAH)")} |
 	0xe2 0x82 0xb9 @{r("ccy(INR)")} |
 	0xe2 0x82 0xba @{r("ccy(TRY)")} |
-	"$" @{r("ccy(USD)")} |
-	zlen ;
+	"$" @{r("ccy(USD)")} ;
 }%%

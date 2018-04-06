@@ -24,10 +24,11 @@
 	consonant = upper - vowel;
 	sep = "\f" | "\n" | "\r\n" | "\t" | "\v" | " ";
 
-	include finner "ccy.rl";
+	include finner "ccy.c";
 	include finner "ccysym.rl";
 	include finner "num.c";
 	include finner "unit-1.rl";
+	include finner "amt.c";
 	include finner "date.c";
 	include finner "time.c";
 	include finner "figi.c";
@@ -37,20 +38,18 @@
 	include finner "wkn.c";
 	include finner "lei.c";
 
-	amt = ccy " "? num | num " "? ccy ;
-
 	finner =
 		num |
 		date |
 		time |
-		ccy @{r("ccy")} |
+		ccy |
 		ccysym |
 		ccy ("." | ":" | "/")? ccy @{c(fxpair)} |
 		isin |
 		figi |
 		wkn |
 		unit_1 |
-		amt @{r("amt")} |
+		amt |
 		cusip |
 		sedol |
 		lei |

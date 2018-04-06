@@ -75,6 +75,10 @@ extern fn_bid_t fn_date_yl(const char*, size_t);
 extern fn_bid_t fn_date_m1(const char*, size_t);
 extern fn_bid_t fn_date_m2(const char*, size_t);
 extern fn_bid_t fn_time(const char*, size_t);
+extern fn_bid_t fn_ccy(const char*, size_t);
+extern fn_bid_t fn_amt(const char*, size_t);
+
+extern void fn_ccy_for_amt(fn_bid_t);
 
 
 /* convenience */

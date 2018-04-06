@@ -2,7 +2,7 @@
 
 $ finner extr "${srcdir}/cftc_test_01.txt" | tr '$' '@'
 February 5, 2008	date	[157,173)
-@ 1000	amt(USD)	[869,874)
+@1000	amt(USD)	[869,874)
 55,094	num	[1050,1056)
 5,378	num	[1062,1067)
 23,610	num	[1072,1078)

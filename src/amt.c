@@ -41,4 +41,44 @@
 #include "finner.h"
 #include "nifty.h"
 
+#ifdef RAGEL_BLOCK
+%%{
+	machine finner;
+
+	action G {
+		fn_ccy_for_amt(r.b);
+	}
+
+	amt = (ccy | ccysym) @G " "? num @{c(amt)} |
+		num " "? (ccy | ccysym) @G @{c(amt)} ;
+}%%
+#endif	/* RAGEL_BLOCK */
+
+static fn_state_t last_ccy;
+
+static const char*
+amt(fn_state_t st)
+{
+	static char buf[] = "amt(...)";
+	memcpy(buf + 4U, &st, 3U);
+	return buf;
+}
+
+
+void
+fn_ccy_for_amt(fn_bid_t b)
+{
+	const char *ccy = B(b);
+	memcpy(&last_ccy, ccy + 4U, 3U);
+	return;
+}
+
+fn_bid_t
+fn_amt(const char *UNUSED(str), size_t UNUSED(len))
+{
+/* we trust the machine above and also that last_ccy
+ * was updated properly, i.e. by calling fn_ccy_for_amt() */
+	return (fn_bid_t){last_ccy, amt};
+}
+
 /* amt.c ends here */
