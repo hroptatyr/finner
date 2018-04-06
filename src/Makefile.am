@@ -40,7 +40,7 @@ libfinner_a_SOURCES += ccy.c
 libfinner_a_SOURCES += amt.c
 libfinner_a_SOURCES += date.c
 libfinner_a_SOURCES += time.c
-libfinner_a_SOURCES += ccysym.rl
+libfinner_a_SOURCES += ccysym.c
 
 bin_PROGRAMS += finner
 finner_SOURCES = finner.c finner.yuck
@@ -74,7 +74,7 @@ SUFFIXES += .rlc
 	$(AM_V_GEN) PATH=$(top_builddir)/build-aux:"$${PATH}" \
 		ragel -F1 -C -o $@ $<
 
-finner.rlc: unit-1.c ccy.c ccysym.rl amt.c time.c date.c
+finner.rlc: unit-1.c ccy.c ccysym.c amt.c time.c date.c
 
 ## Create preprocessor output (debugging purposes only)
 .c.i:

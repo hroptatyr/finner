@@ -25,7 +25,7 @@
 	sep = "\f" | "\n" | "\r\n" | "\t" | "\v" | " ";
 
 	include finner "ccy.c";
-	include finner "ccysym.rl";
+	include finner "ccysym.c";
 	include finner "num.c";
 	include finner "unit-1.c";
 	include finner "amt.c";
