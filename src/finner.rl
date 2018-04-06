@@ -29,6 +29,7 @@
 	include finner "num.c";
 	include finner "unit-1.rl";
 	include finner "amt.c";
+	include finner "fxpair.c";
 	include finner "date.c";
 	include finner "time.c";
 	include finner "figi.c";
@@ -44,7 +45,7 @@
 		time |
 		ccy |
 		ccysym |
-		ccy ("." | ":" | "/")? ccy @{c(fxpair)} |
+		fxpair |
 		isin |
 		figi |
 		wkn |

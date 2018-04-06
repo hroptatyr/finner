@@ -52,6 +52,14 @@ typedef union {
 	};
 } fxpair_state_t;
 
+#ifdef RAGEL_BLOCK
+%%{
+	machine finner;
+
+	fxpair = ccy ("." | ":" | "/")? ccy @{c(fxpair)} ;
+}%%
+#endif	/* RAGEL_BLOCK */
+
 static const char*
 fxpair(fn_state_t st)
 {
