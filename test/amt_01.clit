@@ -1,0 +1,13 @@
+#!/usr/bin/clitoris  ## -*- shell-script -*-
+
+$ finner anno "${srcdir}/amt_01.txt"
+This is A$ 5.00/amt(AUD) or 4.00 EUR/amt(EUR), some people say EUR4.00/amt(EUR)
+zł 4000/amt(PLN) yeah
+₦ 559/amt(NGN) (about 409 zł/amt(PLN)
+₴88/amt(UAH)
+8782 ֏/amt(AMD)
+It's USD 4,222,333,444/amt(USD).
+Or ZAR 4 444 111/amt(ZAR).
+Being more precise DEM 4.111.222.333,34/amt(DEM)
+Or ZAR 4 111 222 333.99/amt(ZAR)
+$
