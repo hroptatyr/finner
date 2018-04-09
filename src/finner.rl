@@ -27,8 +27,8 @@
 	include finner "ccy.c";
 	include finner "ccysym.c";
 	include finner "num.c";
-	include finner "unit-1.c";
 	include finner "amt.c";
+	include finner "unit-1.c";
 	include finner "fxpair.c";
 	include finner "date.c";
 	include finner "time.c";
@@ -49,8 +49,8 @@
 		isin |
 		figi |
 		wkn |
-		unit_1 |
 		amt |
+		unit_1 |
 		cusip |
 		sedol |
 		lei |
@@ -84,6 +84,7 @@ terms1(const char **pp, const char *const s, const char *const pe)
 		r = (anno_t){y, {q - s, p + 1U - s}}; \
 	}
 #define r(x)	r = (anno_t){S(x), {q - s, p + 1U - s}};
+#define x()	r.x = (extent_t){q - s, p + 1U - s};
 	%% write init;
 	%% write exec;
 	*pp = p;
