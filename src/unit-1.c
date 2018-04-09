@@ -57,7 +57,8 @@
 		num " "? "%" @{r("num(*0.01)")} |
 		(num " ")? "basis points" @{r("num(*0.0001)")} |
 		(num " "?)? "bps" @{r("num(*0.0001)")} |
-		num " "? "bps" @{r("num(*0.0001)")} ;
+		num " "? "bps" @{r("num(*0.0001)")} |
+		amt ("k" | "m" | "bn" | "tr") @{x()} ;
 }%%
 #endif	/* RAGEL_BLOCK */
 

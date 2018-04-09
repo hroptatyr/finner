@@ -50,7 +50,8 @@
 	}
 
 	amt = (ccy | ccysym) @G " "? num @{c(amt)} |
-		num " "? (ccy | ccysym) @G @{c(amt)} ;
+		num " "? (ccy | ccysym) @G @{c(amt)} |
+		"R" @{fn_ccy_for_amt(S("ccy(ZAR)"));} " "? num @{c(amt)} ;
 }%%
 #endif	/* RAGEL_BLOCK */
 
