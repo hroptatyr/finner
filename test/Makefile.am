@@ -38,4 +38,10 @@ TESTS += nl_02.clit
 TESTS += amt_01.clit
 EXTRA_DIST += amt_01.txt
 
+TESTS += date_01.clit
+EXTRA_DIST += date_01.txt
+
+TESTS += ccysym_01.clit
+EXTRA_DIST += ccysym_01.txt
+
 ## Makefile.am ends here

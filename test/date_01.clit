@@ -1,0 +1,19 @@
+#!/usr/bin/clitoris  ## -*- shell-script -*-
+
+$ finner anno "${srcdir}/date_01.txt"
+On Apr 2, 2000/date the world is going to end.
+Two days before it was Apr 0, 2000.
+And Apr 32, 2000 is invalid.
+Or was it June 04, 2000/date?
+No I'm certain it was 11/12/2000/date and not 13/12/2000/date.
+And 13/num/13/2000 is invalid.
+So is 12/num/40/2012.
+Or 40/num/12/2012.
+Nor does 00/12/2000 work.
+But 4/4/2000/date is fine.
+So is 5/15/2000/date,
+And 16/4/2008/date.
+Some people write dates like 06 Jun 2012/date.
+Or I've seen 4-Jan-2009/date.
+And even 16/May/2019/date But 32/num/May/2019 doesn't work.
+$

@@ -1,0 +1,9 @@
+#!/usr/bin/clitoris  ## -*- shell-script -*-
+
+$ finner anno "${srcdir}/ccysym_01.txt"
+This is A$/ccy(AUD) or EUR/ccy(EUR) or is it USD/ccy(USD)?
+zł/ccy(PLN) yeah
+₦/ccy(NGN) (about zł/ccy(PLN)
+₴/ccy(UAH)
+ ֏/ccy(AMD)
+$
