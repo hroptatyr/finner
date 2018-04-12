@@ -50,27 +50,41 @@
 	}
 
 	_num =
-		num "k" |
-		(num " ")? "million" |
-		num ("mm" | "m") |
-		(num " ")? "billion" |
-		num "bn" |
-		(num " ")? "trillion" |
-		num "tr" |
-		num ;
+		num "k" @{fn_unit_1_for_amt('k');} |
+		(num " ")? "million" @{fn_unit_1_for_amt('m');} |
+		num ("mm" | "m") @{fn_unit_1_for_amt('m');} |
+		(num " ")? "billion" @{fn_unit_1_for_amt('g');} |
+		num "bn" @{fn_unit_1_for_amt('g');} |
+		(num " ")? "trillion" @{fn_unit_1_for_amt('t');} |
+		num "tr" @{fn_unit_1_for_amt('t');} |
+		num @{fn_unit_1_for_amt('1');} ;
 	amt = (ccy | ccysym) @G " "? _num @{c(amt)} |
 		_num " "? (ccy | ccysym) @G @{c(amt)} |
 		"R" @{fn_ccy_for_amt(S("ccy(ZAR)"));} " "? _num @{c(amt)} ;
 }%%
 #endif	/* RAGEL_BLOCK */
 
-static fn_state_t last_ccy;
+typedef union {
+	fn_state_t s;
+	struct {
+		char ccy[3U];
+		char suf;
+	};
+} amt_param_t;
+
+static const char suf[] = "*1000000000000";
+static amt_param_t last;
 
 static const char*
 amt(fn_state_t st)
 {
-	static char buf[] = "amt(...)";
-	memcpy(buf + 4U, &st, 3U);
+	static char buf[] = "amt(...)*1000000000000";
+	amt_param_t x = {st};
+
+	memcpy(buf + 4U, x.ccy, 3U);
+	memcpy(buf + 4U + 3U, suf, x.suf);
+	buf[4U + 3U + x.suf + 0U] = ')';
+	buf[4U + 3U + x.suf + 1U] = '\0';
 	return buf;
 }
 
@@ -79,7 +93,30 @@ void
 fn_ccy_for_amt(fn_bid_t b)
 {
 	const char *ccy = B(b);
-	memcpy(&last_ccy, ccy + 4U, 3U);
+	memcpy(last.ccy, ccy + 4U, 3U);
+	return;
+}
+
+void
+fn_unit_1_for_amt(char x)
+{
+	switch (x) {
+	case 'k':
+		last.suf = 2 + 3;
+		break;
+	case 'm':
+		last.suf = 2 + 6;
+		break;
+	case 'g':
+		last.suf = 2 + 9;
+		break;
+	case 't':
+		last.suf = 2 + 12;
+		break;
+	default:
+		last.suf = 0;
+		break;
+	}
 	return;
 }
 
@@ -88,7 +125,7 @@ fn_amt(const char *UNUSED(str), size_t UNUSED(len))
 {
 /* we trust the machine above and also that last_ccy
  * was updated properly, i.e. by calling fn_ccy_for_amt() */
-	return (fn_bid_t){last_ccy, amt};
+	return (fn_bid_t){last.s, amt};
 }
 
 /* amt.c ends here */
