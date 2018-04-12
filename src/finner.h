@@ -79,6 +79,7 @@ extern fn_bid_t fn_ccy(const char*, size_t);
 extern fn_bid_t fn_amt(const char*, size_t);
 
 extern void fn_ccy_for_amt(fn_bid_t);
+extern void fn_unit_1_for_amt(char);
 
 
 /* convenience */
