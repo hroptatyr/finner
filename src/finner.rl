@@ -84,7 +84,6 @@ terms1(const char **pp, const char *const s, const char *const pe)
 		r = (anno_t){y, {q - s, p + 1U - s}}; \
 	}
 #define r(x)	r = (anno_t){S(x), {q - s, p + 1U - s}};
-#define x()	r.x = (extent_t){q - s, p + 1U - s};
 	%% write init;
 	%% write exec;
 	*pp = p;
