@@ -49,9 +49,18 @@
 		fn_ccy_for_amt(r.b);
 	}
 
-	amt = (ccy | ccysym) @G " "? num @{c(amt)} |
-		num " "? (ccy | ccysym) @G @{c(amt)} |
-		"R" @{fn_ccy_for_amt(S("ccy(ZAR)"));} " "? num @{c(amt)} ;
+	_num =
+		num "k" |
+		(num " ")? "million" |
+		num ("mm" | "m") |
+		(num " ")? "billion" |
+		num "bn" |
+		(num " ")? "trillion" |
+		num "tr" |
+		num ;
+	amt = (ccy | ccysym) @G " "? _num @{c(amt)} |
+		_num " "? (ccy | ccysym) @G @{c(amt)} |
+		"R" @{fn_ccy_for_amt(S("ccy(ZAR)"));} " "? _num @{c(amt)} ;
 }%%
 #endif	/* RAGEL_BLOCK */
 
