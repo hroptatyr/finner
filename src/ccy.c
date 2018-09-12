@@ -184,6 +184,7 @@
 		"PH" 'P'i |
 		"PK" 'R'i |
 		"PL" 'N'i |
+		"PL" 'Z'i |
 		"PT" 'E'i |
 		"PY" 'G'i |
 		"QA" 'R'i |
@@ -213,6 +214,7 @@
 		"TN" 'D'i |
 		"TO" 'P'i |
 		"TP" 'E'i |
+		"TR" 'L'i |
 		"TR" 'Y'i |
 		"TT" 'D'i |
 		"TW" 'D'i |
@@ -224,6 +226,7 @@
 		"UZ" 'S'i |
 		"VA" 'L'i |
 		"VE" 'F'i |
+		"VE" 'S'i |
 		"VN" 'D'i |
 		"VU" 'V'i |
 		"WS" 'T'i |
