@@ -77,6 +77,8 @@ extern fn_bid_t fn_date_m2(const char*, size_t);
 extern fn_bid_t fn_time(const char*, size_t);
 extern fn_bid_t fn_ccy(const char*, size_t);
 extern fn_bid_t fn_amt(const char*, size_t);
+extern fn_bid_t fn_cfi(const char*, size_t);
+extern fn_bid_t fn_gics(const char*, size_t);
 
 extern void fn_ccy_for_amt(fn_bid_t);
 extern void fn_unit_1_for_amt(char);
