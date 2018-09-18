@@ -44,4 +44,7 @@ EXTRA_DIST += date_01.txt
 TESTS += ccysym_01.clit
 EXTRA_DIST += ccysym_01.txt
 
+TESTS += cfi_test_01.clit
+EXTRA_DIST += cfi_test_01.txt
+
 ## Makefile.am ends here
