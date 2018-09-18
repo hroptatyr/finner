@@ -38,9 +38,11 @@
 	include finner "cusip.c";
 	include finner "wkn.c";
 	include finner "lei.c";
+	include finner "cfi.c";
 
 	finner =
 		num |
+		cfi |
 		date |
 		time |
 		ccy |
