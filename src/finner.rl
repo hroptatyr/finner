@@ -39,6 +39,7 @@
 	include finner "wkn.c";
 	include finner "lei.c";
 	include finner "cfi.c";
+	include finner "gics.c";
 
 	finner =
 		num |
@@ -56,6 +57,7 @@
 		cusip |
 		sedol |
 		lei |
+		gics |
 		empty ;
 
 	main := (any* @{q = p + 1U;}) :> ( finner ) ;
