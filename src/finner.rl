@@ -39,6 +39,7 @@
 	include finner "wkn.c";
 	include finner "lei.c";
 	include finner "cfi.c";
+	include finner "mic.c";
 	include finner "gics.c";
 
 	finner =
@@ -57,6 +58,7 @@
 		cusip |
 		sedol |
 		lei |
+		mic |
 		gics |
 		empty ;
 
