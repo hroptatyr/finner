@@ -1196,7 +1196,6 @@
 		"TRXQXX" |
 		"TRXSXX" |
 		"TRXAXX" |
-		"TRXMXX" |
 		"TIEXXX" |
 		"TIDXXX" |
 		"TIFXXX" |
@@ -2562,35 +2561,30 @@
 		"LSMTXX" |
 		"TRNDXX" |
 		"TRNWXX" |
-		"TRNMXX" |
 		"TRNQXX" |
 		"TRNSXX" |
 		"TRNAXX" |
 		"TRNMXX" |
 		"TRVDXX" |
 		"TRVWXX" |
-		"TRVMXX" |
 		"TRVQXX" |
 		"TRVSXX" |
 		"TRVAXX" |
 		"TRVMXX" |
 		"TRFDXX" |
 		"TRFWXX" |
-		"TRFMXX" |
 		"TRFQXX" |
 		"TRFSXX" |
 		"TRFAXX" |
 		"TRFMXX" |
 		"TRRDXX" |
 		"TRRWXX" |
-		"TRRMXX" |
 		"TRRQXX" |
 		"TRRSXX" |
 		"TRRAXX" |
 		"TRRMXX" |
 		"TRMDXX" |
 		"TRMWXX" |
-		"TRMMXX" |
 		"TRMQXX" |
 		"TRMSXX" |
 		"TRMAXX" |
