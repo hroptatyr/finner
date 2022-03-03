@@ -72,9 +72,12 @@ SUFFIXES += .yucc
 	$(AM_V_GEN) PATH=$(top_builddir)/build-aux:"$${PATH}" \
 		yuck$(EXEEXT) gen -o $@ $<
 
+## new ragel seems to need a lot of stacksize, use limit stacksize 128M
 SUFFIXES += .rl
 SUFFIXES += .rlc
 .rl.rlc:
+	-ulimit -s 131072
+	-limit stacksize 128M
 	$(AM_V_GEN) PATH=$(top_builddir)/build-aux:"$${PATH}" \
 		ragel -F1 -o $@ $<
 
