@@ -76,7 +76,7 @@ SUFFIXES += .rl
 SUFFIXES += .rlc
 .rl.rlc:
 	$(AM_V_GEN) PATH=$(top_builddir)/build-aux:"$${PATH}" \
-		ragel -F1 -C -o $@ $<
+		ragel -F1 -o $@ $<
 
 finner.rlc: unit-1.c ccy.c ccysym.c amt.c time.c date.c num.c
 
